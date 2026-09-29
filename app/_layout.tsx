@@ -49,6 +49,7 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="module/[id]" options={{ headerShown: false }} />
+        <Stack.Screen name="privacy" options={{ title: 'Privacy Policy' }} />
       </Stack>
     </ThemeProvider>
   );

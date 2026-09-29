@@ -1,11 +1,8 @@
-import * as WebBrowser from 'expo-web-browser';
 import { Pressable, StyleSheet } from 'react-native';
+import { router } from 'expo-router';
 
 import { Text, View } from '@/components/Themed';
 import { useProgress } from '@/progress/ProgressContext';
-
-/** Stub until Taylor hosts a real policy URL (P4 store packaging). */
-const PRIVACY_POLICY_STUB_URL = 'https://example.com/dsp-trainer-privacy';
 
 export default function SettingsScreen() {
   const { resetAll, map, ready } = useProgress();
@@ -29,12 +26,13 @@ export default function SettingsScreen() {
       </Text>
 
       <Pressable
-        accessibilityRole="button"
+        accessibilityRole="link"
+        accessibilityLabel="Open privacy policy"
         style={styles.linkButton}
         onPress={() => {
-          void WebBrowser.openBrowserAsync(PRIVACY_POLICY_STUB_URL);
+          router.push('/privacy');
         }}>
-        <Text style={styles.linkText}>Privacy policy (stub)</Text>
+        <Text style={styles.linkText}>Privacy policy</Text>
       </Pressable>
 
       <Pressable
