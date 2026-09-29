@@ -20,11 +20,19 @@ export type DemoParam = {
   unit?: string;
 };
 
+export type DemoComponentId =
+  | 'aliasing-visualizer'
+  | 'sine-generator'
+  | 'spectrum-visualizer'
+  | 'windowing-visualizer'
+  | 'filter-visualizer'
+  | 'convolution-visualizer';
+
 export type Demo = {
   id: string;
   title: string;
   summary: string;
-  componentId: 'aliasing-visualizer';
+  componentId: DemoComponentId;
   params: DemoParam[];
 };
 
