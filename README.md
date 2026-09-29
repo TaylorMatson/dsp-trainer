@@ -17,7 +17,7 @@ Target: iOS App Store and Google Play. v1 loop: lesson → demo → practice.
 npm install
 ```
 
-## Run
+## Run (Expo)
 
 ```bash
 npm start          # Expo dev server (scan QR with Expo Go)
@@ -26,24 +26,26 @@ npm run android    # Android emulator
 npm run web        # browser smoke (optional)
 ```
 
-From the Home tab, open **Demo** (or the "Open sine smoke demo" link) for the sine plot smoke screen.
+From **Home**, open **Module 1: Sampling & Aliasing** and complete Lesson → Demo → Practice offline.
+The Demo tab still hosts the sine smoke plot.
 
 ## Verify
 
 ```bash
 npm run typecheck  # tsc --noEmit
-npm test           # vitest (signal util tests)
-npm run lint       # expo lint (may prompt to install eslint on first run)
+npm test           # vitest (signal + content + progress helpers)
+npm run lint       # expo lint
 ```
 
 ## Layout
 
 | Path | Role |
 |------|------|
-| `app/` | Expo Router screens (Home / Demo / Settings) |
-| `signal/` | Pure DSP helpers (unit-tested) |
-| `content/` | Curriculum stubs (full modules later) |
-| `components/` | UI helpers + `SinePlot` |
+| `app/` | Expo Router (Home / Demo / Settings + `module/[id]` loop) |
+| `content/` | Curriculum schema + Module 1 Sampling & Aliasing |
+| `signal/` | Pure DSP helpers (sine, sample-rate/Nyquist, FFT magnitude) |
+| `progress/` | Local AsyncStorage progress store |
+| `components/` | UI helpers + plots / aliasing visualizer |
 | `eas.json` | EAS build profiles (no credentials yet) |
 
 ## EAS
@@ -52,4 +54,4 @@ npm run lint       # expo lint (may prompt to install eslint on first run)
 
 ## Track
 
-`app-scaffold` (P1). Curriculum and store packaging are separate tracks.
+P2 vertical slice: `curriculum-content` + `dsp-audio-engine` (Module 1 offline loop + signal engine v0).

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import { ProgressProvider } from '@/progress/ProgressContext';
 
 export { ErrorBoundary } from 'expo-router';
 
@@ -33,7 +34,11 @@ export default function RootLayout() {
     return null;
   }
 
-  return <RootLayoutNav />;
+  return (
+    <ProgressProvider>
+      <RootLayoutNav />
+    </ProgressProvider>
+  );
 }
 
 function RootLayoutNav() {
@@ -43,6 +48,7 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="module/[id]" options={{ headerShown: false }} />
       </Stack>
     </ThemeProvider>
   );
