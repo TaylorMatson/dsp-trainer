@@ -1,5 +1,5 @@
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
@@ -12,11 +12,14 @@ export default function ModulePracticeScreen() {
   const module = getModuleById(id ?? '');
   const practice = module?.practice;
   const { recordPractice } = useProgress();
+  const scrollRef = useRef<ScrollView>(null);
 
   const [answers, setAnswers] = useState<(number | null)[]>(() =>
     practice ? practice.challenges.map(() => null) : [],
   );
   const [submitted, setSubmitted] = useState(false);
+  const [resultScore, setResultScore] = useState<number | null>(null);
+  const [resultPassed, setResultPassed] = useState(false);
 
   const correctIndexes = useMemo(
     () => practice?.challenges.map((c) => c.correctIndex) ?? [],
@@ -31,23 +34,64 @@ export default function ModulePracticeScreen() {
     );
   }
 
-  const score = scorePractice(answers, correctIndexes);
-  const passed = score >= practice.passScore;
+  const liveScore = scorePractice(answers, correctIndexes);
   const allAnswered = answers.every((a) => a !== null);
+  const displayScore = resultScore ?? liveScore;
+  const displayPassed = resultScore !== null ? resultPassed : liveScore >= practice.passScore;
 
   const submit = () => {
+    const score = scorePractice(answers, correctIndexes);
+    const passed = score >= practice.passScore;
+    setResultScore(score);
+    setResultPassed(passed);
     setSubmitted(true);
     void recordPractice(module.id, score, passed);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const retry = () => {
+    setSubmitted(false);
+    setResultScore(null);
+    setResultPassed(false);
+    setAnswers(practice.challenges.map(() => null));
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
   return (
     <>
       <Stack.Screen options={{ title: practice.title }} />
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView
+        ref={scrollRef}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled">
         <Text style={styles.title}>{practice.title}</Text>
         <Text style={styles.caption}>
           Pass with {practice.passScore} of {practice.challenges.length} correct.
         </Text>
+
+        {submitted ? (
+          <View style={styles.scoreBanner} testID="practice-score-banner">
+            <Text style={styles.scoreBannerTitle}>
+              Score {displayScore}/{practice.challenges.length}
+            </Text>
+            <Text style={styles.scoreBannerStatus}>
+              {displayPassed ? 'Passed — nice work.' : 'Not yet — review and retry.'}
+            </Text>
+            {displayPassed ? (
+              <Link href={`/module/${module.id}`} style={styles.link}>
+                Back to module ✓
+              </Link>
+            ) : (
+              <Pressable
+                accessibilityRole="button"
+                style={styles.secondary}
+                onPress={retry}
+                testID="practice-retry">
+                <Text style={styles.secondaryText}>Retry</Text>
+              </Pressable>
+            )}
+          </View>
+        ) : null}
 
         {practice.challenges.map((challenge, index) => (
           <View key={challenge.id} style={styles.card}>
@@ -62,6 +106,7 @@ export default function ModulePracticeScreen() {
                 return (
                   <Pressable
                     key={choice}
+                    accessibilityRole="button"
                     disabled={submitted}
                     onPress={() => {
                       setAnswers((prev) => {
@@ -94,6 +139,8 @@ export default function ModulePracticeScreen() {
 
         {!submitted ? (
           <Pressable
+            accessibilityRole="button"
+            testID="practice-check-answers"
             style={[styles.primary, !allAnswered && styles.primaryDisabled]}
             disabled={!allAnswered}
             onPress={submit}>
@@ -102,16 +149,14 @@ export default function ModulePracticeScreen() {
         ) : (
           <View style={styles.result}>
             <Text style={styles.resultTitle}>
-              Score {score}/{practice.challenges.length}{' '}
-              {passed ? '— passed' : '— try again'}
+              Score {displayScore}/{practice.challenges.length}{' '}
+              {displayPassed ? '— passed' : '— try again'}
             </Text>
-            {!passed ? (
+            {!displayPassed ? (
               <Pressable
+                accessibilityRole="button"
                 style={styles.secondary}
-                onPress={() => {
-                  setSubmitted(false);
-                  setAnswers(practice.challenges.map(() => null));
-                }}>
+                onPress={retry}>
                 <Text style={styles.secondaryText}>Retry</Text>
               </Pressable>
             ) : (
@@ -140,6 +185,22 @@ const styles = StyleSheet.create({
   caption: {
     fontSize: 14,
     opacity: 0.7,
+  },
+  scoreBanner: {
+    gap: 8,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    borderRadius: 10,
+    backgroundColor: 'rgba(27, 108, 168, 0.14)',
+  },
+  scoreBannerTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+  },
+  scoreBannerStatus: {
+    fontSize: 15,
+    lineHeight: 20,
+    opacity: 0.85,
   },
   card: {
     gap: 8,

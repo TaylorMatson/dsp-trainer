@@ -1,5 +1,5 @@
 import { Link } from 'expo-router';
-import { StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import { MODULES } from '@/content/modules';
@@ -10,7 +10,7 @@ export default function HomeScreen() {
   const { getProgress } = useProgress();
 
   return (
-    <View style={styles.container}>
+    <ScrollView contentContainerStyle={styles.container}>
       <Text style={styles.brand}>DSP Trainer</Text>
       <Text style={styles.subtitle}>
         Lesson → demo → practice. Hear and see signals change.
@@ -44,15 +44,15 @@ export default function HomeScreen() {
       <Link href="/(tabs)/demo" style={styles.secondaryLink}>
         Open sine smoke demo
       </Link>
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     paddingHorizontal: 24,
     paddingTop: 48,
+    paddingBottom: 48,
     gap: 12,
   },
   brand: {

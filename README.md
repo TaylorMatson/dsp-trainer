@@ -26,7 +26,17 @@ npm run android    # Android emulator
 npm run web        # browser smoke (optional)
 ```
 
-From **Home**, open **Module 1: Sampling & Aliasing** and complete Lesson → Demo → Practice offline.
+From **Home**, open any ready module and complete Lesson → Demo → Practice offline.
+
+### v1 modules
+
+1. Sampling & Aliasing
+2. Discrete Signals & Sine
+3. Time vs Frequency (FFT + magnitude reading)
+4. Windowing & Leakage
+5. FIR vs IIR Filters (LP/HP)
+6. Convolution Intro
+
 The Demo tab still hosts the sine smoke plot.
 
 ## Verify
@@ -42,10 +52,10 @@ npm run lint       # expo lint
 | Path | Role |
 |------|------|
 | `app/` | Expo Router (Home / Demo / Settings + `module/[id]` loop) |
-| `content/` | Curriculum schema + Module 1 Sampling & Aliasing |
-| `signal/` | Pure DSP helpers (sine, sample-rate/Nyquist, FFT magnitude) |
+| `content/` | Curriculum schema + v1 modules |
+| `signal/` | Pure DSP helpers (sine, sample-rate, FFT, window, filters, convolve) |
 | `progress/` | Local AsyncStorage progress store |
-| `components/` | UI helpers + plots / aliasing visualizer |
+| `components/` | UI helpers + plots / visualizers |
 | `eas.json` | EAS build profiles (no credentials yet) |
 
 ## EAS
@@ -54,4 +64,4 @@ npm run lint       # expo lint
 
 ## Track
 
-P2 vertical slice: `curriculum-content` + `dsp-audio-engine` (Module 1 offline loop + signal engine v0).
+P3 curriculum pack: `curriculum-content` + `dsp-audio-engine` (remaining v1 topics offline + signal helpers).
