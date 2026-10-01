@@ -2,6 +2,7 @@ import { Link, Stack } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
+import { AvTheme } from '@/constants/AvTheme';
 
 export default function NotFoundScreen() {
   return (
@@ -24,10 +25,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
+    backgroundColor: AvTheme.bg,
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
+    color: AvTheme.ink,
   },
   link: {
     marginTop: 15,
@@ -35,6 +38,6 @@ const styles = StyleSheet.create({
   },
   linkText: {
     fontSize: 14,
-    color: '#2e78b7',
+    color: AvTheme.accent,
   },
 });

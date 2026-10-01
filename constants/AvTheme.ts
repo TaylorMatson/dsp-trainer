@@ -1,6 +1,6 @@
 /**
- * Interactive demo aesthetic tokens measured from local `_ref/glsl-trainer/src/style.css`.
- * Used on demo stages so ear+eye demos match GLSL Trainer’s dark teaching surface.
+ * Shared product aesthetic tokens from local `_ref/glsl-trainer/src/style.css`.
+ * Used across lesson / demo / practice so the loop feels like one product.
  */
 export const AvTheme = {
   bg: '#12140f',
@@ -13,6 +13,13 @@ export const AvTheme = {
   accentInk: '#1a1d08',
   teal: '#8fd0c4',
   warn: '#ffb4a2',
+  danger: '#ff8f7a',
+  dangerFill: 'rgba(255, 143, 122, 0.16)',
+  success: '#8fd0c4',
+  successFill: 'rgba(143, 208, 196, 0.18)',
+  accentFill: 'rgba(223, 242, 90, 0.12)',
+  raiseFill: 'rgba(49, 54, 40, 0.55)',
+  lampOff: '#2a2e22',
   plotPrimary: '#dff25a',
   plotSecondary: '#8fd0c4',
   plotFiltered: '#8fd0c4',

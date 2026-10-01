@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   lamp: {
     width: 18,
     height: 8,
-    backgroundColor: '#2a2e22',
+    backgroundColor: AvTheme.lampOff,
   },
   lampOn: {
     backgroundColor: AvTheme.accent,
@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   canvas: {
     backgroundColor: AvTheme.canvas,
-    borderColor: '#2a2e22',
+    borderColor: AvTheme.lampOff,
     borderWidth: 1,
     padding: 10,
     gap: 10,

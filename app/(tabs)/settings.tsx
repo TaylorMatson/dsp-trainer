@@ -2,6 +2,7 @@ import { Pressable, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 
 import { Text, View } from '@/components/Themed';
+import { AvTheme } from '@/constants/AvTheme';
 import { useProgress } from '@/progress/ProgressContext';
 
 export default function SettingsScreen() {
@@ -10,6 +11,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.kicker}>LOCAL</Text>
       <Text style={styles.title}>Settings</Text>
       <Text style={styles.body}>
         Progress stays on-device in v1. No accounts, mic, or analytics by default.
@@ -51,47 +53,61 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 48,
+    paddingTop: 32,
     gap: 12,
+    backgroundColor: AvTheme.bg,
+  },
+  kicker: {
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    letterSpacing: 1.2,
+    color: AvTheme.teal,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
+    color: AvTheme.ink,
   },
   section: {
     marginTop: 16,
     fontSize: 17,
     fontWeight: '700',
+    color: AvTheme.ink,
   },
   body: {
     fontSize: 15,
     lineHeight: 22,
-    opacity: 0.8,
+    color: AvTheme.muted,
   },
   meta: {
     marginTop: 4,
     fontSize: 13,
-    opacity: 0.6,
+    color: AvTheme.muted,
   },
   linkButton: {
     marginTop: 12,
     alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   linkText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1B6CA8',
+    color: AvTheme.accent,
   },
   reset: {
     marginTop: 20,
     paddingVertical: 12,
     paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: 'rgba(180, 60, 60, 0.12)',
+    borderWidth: 1,
+    borderColor: AvTheme.danger,
+    backgroundColor: AvTheme.dangerFill,
     alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   resetText: {
     fontWeight: '600',
-    color: '#8B2E2E',
+    color: AvTheme.danger,
   },
 });

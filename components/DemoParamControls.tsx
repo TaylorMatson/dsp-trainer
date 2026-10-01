@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
+import { AvTheme } from '@/constants/AvTheme';
 import type { DemoParam } from '@/content/schema';
 
 type DemoParamControlsProps = {
@@ -79,6 +80,7 @@ const styles = StyleSheet.create({
   },
   paramLabel: {
     fontSize: 15,
+    color: AvTheme.ink,
   },
   paramButtons: {
     flexDirection: 'row',
@@ -86,12 +88,16 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(27, 108, 168, 0.18)',
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
+    borderColor: AvTheme.line,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   chipText: {
     fontWeight: '700',
     fontSize: 16,
+    color: AvTheme.ink,
   },
 });

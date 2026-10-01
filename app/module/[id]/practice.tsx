@@ -3,6 +3,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
+import { AvTheme } from '@/constants/AvTheme';
 import { getModuleById } from '@/content/modules';
 import { useProgress } from '@/progress/ProgressContext';
 import { scorePractice } from '@/progress/types';
@@ -62,8 +63,10 @@ export default function ModulePracticeScreen() {
       <Stack.Screen options={{ title: practice.title }} />
       <ScrollView
         ref={scrollRef}
+        style={styles.scroll}
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled">
+        <Text style={styles.kicker}>PRACTICE</Text>
         <Text style={styles.title}>{practice.title}</Text>
         <Text style={styles.caption}>
           Pass with {practice.passScore} of {practice.challenges.length} correct.
@@ -172,35 +175,49 @@ export default function ModulePracticeScreen() {
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+    backgroundColor: AvTheme.bg,
+  },
   container: {
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 48,
     gap: 16,
+    backgroundColor: AvTheme.bg,
+  },
+  kicker: {
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    letterSpacing: 1.2,
+    color: AvTheme.teal,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
+    color: AvTheme.ink,
   },
   caption: {
     fontSize: 14,
-    opacity: 0.7,
+    color: AvTheme.muted,
   },
   scoreBanner: {
     gap: 8,
     paddingVertical: 14,
     paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: 'rgba(27, 108, 168, 0.14)',
+    backgroundColor: AvTheme.bgRaise,
+    borderColor: AvTheme.line,
+    borderWidth: 1,
   },
   scoreBannerTitle: {
     fontSize: 20,
     fontWeight: '700',
+    color: AvTheme.ink,
   },
   scoreBannerStatus: {
     fontSize: 15,
     lineHeight: 20,
-    opacity: 0.85,
+    color: AvTheme.muted,
   },
   card: {
     gap: 8,
@@ -210,43 +227,54 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 22,
+    color: AvTheme.ink,
   },
   choice: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(27, 108, 168, 0.1)',
+    minHeight: 44,
+    justifyContent: 'center',
+    backgroundColor: AvTheme.bgRaise,
+    borderColor: AvTheme.line,
+    borderWidth: 1,
   },
   choiceSelected: {
-    backgroundColor: 'rgba(27, 108, 168, 0.28)',
+    borderColor: AvTheme.accent,
+    backgroundColor: AvTheme.accentFill,
   },
   choiceCorrect: {
-    backgroundColor: 'rgba(34, 140, 80, 0.28)',
+    borderColor: AvTheme.success,
+    backgroundColor: AvTheme.successFill,
   },
   choiceWrong: {
-    backgroundColor: 'rgba(180, 60, 60, 0.22)',
+    borderColor: AvTheme.danger,
+    backgroundColor: AvTheme.dangerFill,
   },
   choiceText: {
     fontSize: 15,
+    color: AvTheme.ink,
   },
   explanation: {
     fontSize: 13,
     lineHeight: 18,
-    opacity: 0.75,
+    color: AvTheme.muted,
     marginTop: 4,
   },
   primary: {
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: '#1B6CA8',
+    borderWidth: 1,
+    borderColor: AvTheme.accent,
+    backgroundColor: AvTheme.accent,
     alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   primaryDisabled: {
     opacity: 0.45,
   },
   primaryText: {
-    color: '#fff',
+    color: AvTheme.accentInk,
     fontWeight: '700',
     fontSize: 16,
   },
@@ -256,20 +284,25 @@ const styles = StyleSheet.create({
   resultTitle: {
     fontSize: 17,
     fontWeight: '700',
+    color: AvTheme.ink,
   },
   secondary: {
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 8,
-    backgroundColor: 'rgba(27, 108, 168, 0.15)',
+    borderWidth: 1,
+    borderColor: AvTheme.line,
+    backgroundColor: 'transparent',
     alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   secondaryText: {
     fontWeight: '600',
+    color: AvTheme.ink,
   },
   link: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1B6CA8',
+    color: AvTheme.accent,
   },
 });

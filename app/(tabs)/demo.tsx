@@ -3,6 +3,7 @@ import { Pressable, StyleSheet } from 'react-native';
 
 import { SinePlot } from '@/components/SinePlot';
 import { Text, View } from '@/components/Themed';
+import { AvTheme } from '@/constants/AvTheme';
 import { generateSineSamples, peakAmplitude } from '@/signal/sine';
 
 const FREQUENCIES = [220, 440, 880] as const;
@@ -21,11 +22,14 @@ export default function DemoScreen() {
 
   return (
     <View style={styles.container}>
+      <Text style={styles.kicker}>SMOKE</Text>
       <Text style={styles.title}>Sine smoke</Text>
       <Text style={styles.caption}>
         Synth-only plot at {frequencyHz} Hz. Peak |amp| ≈ {peak.toFixed(3)}.
       </Text>
-      <SinePlot frequencyHz={frequencyHz} />
+      <View style={styles.canvas}>
+        <SinePlot frequencyHz={frequencyHz} strokeColor={AvTheme.plotPrimary} />
+      </View>
       <View style={styles.row}>
         {FREQUENCIES.map((hz) => (
           <Pressable
@@ -44,35 +48,54 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: 20,
-    paddingTop: 32,
-    gap: 16,
-    alignItems: 'center',
+    paddingTop: 24,
+    gap: 14,
+    alignItems: 'stretch',
+    backgroundColor: AvTheme.bg,
+  },
+  kicker: {
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    letterSpacing: 1.2,
+    color: AvTheme.teal,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
-    alignSelf: 'flex-start',
+    color: AvTheme.ink,
   },
   caption: {
     fontSize: 14,
-    opacity: 0.75,
-    alignSelf: 'flex-start',
+    color: AvTheme.muted,
+  },
+  canvas: {
+    backgroundColor: AvTheme.canvas,
+    borderColor: AvTheme.line,
+    borderWidth: 1,
+    padding: 12,
+    alignItems: 'center',
   },
   row: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 10,
-    marginTop: 8,
+    marginTop: 4,
   },
   chip: {
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(27, 108, 168, 0.12)',
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
+    borderColor: AvTheme.line,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   chipActive: {
-    backgroundColor: 'rgba(27, 108, 168, 0.35)',
+    borderColor: AvTheme.accent,
+    backgroundColor: AvTheme.accentFill,
   },
   chipText: {
     fontWeight: '600',
+    color: AvTheme.ink,
   },
 });

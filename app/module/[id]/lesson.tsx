@@ -2,6 +2,7 @@ import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
+import { AvTheme } from '@/constants/AvTheme';
 import { getModuleById } from '@/content/modules';
 import type { LessonBlock } from '@/content/schema';
 import { useProgress } from '@/progress/ProgressContext';
@@ -23,7 +24,8 @@ export default function ModuleLessonScreen() {
   return (
     <>
       <Stack.Screen options={{ title: lesson.title }} />
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+        <Text style={styles.kicker}>LESSON</Text>
         <Text style={styles.title}>{lesson.title}</Text>
         {lesson.blocks.map((block, index) => (
           <LessonBlockView key={`${lesson.id}-${index}`} block={block} />
@@ -61,41 +63,58 @@ function LessonBlockView({ block }: { block: LessonBlock }) {
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+    backgroundColor: AvTheme.bg,
+  },
   container: {
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 48,
     gap: 14,
+    backgroundColor: AvTheme.bg,
+  },
+  kicker: {
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    letterSpacing: 1.2,
+    color: AvTheme.teal,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
+    color: AvTheme.ink,
   },
   body: {
     fontSize: 16,
     lineHeight: 24,
-    opacity: 0.9,
+    color: AvTheme.ink,
   },
   callout: {
     padding: 14,
-    borderRadius: 10,
-    backgroundColor: 'rgba(27, 108, 168, 0.12)',
+    backgroundColor: AvTheme.bgRaise,
+    borderColor: AvTheme.teal,
+    borderWidth: 1,
   },
   calloutText: {
     fontSize: 15,
     lineHeight: 22,
     fontWeight: '600',
+    color: AvTheme.teal,
   },
   primary: {
     marginTop: 12,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: '#1B6CA8',
+    borderWidth: 1,
+    borderColor: AvTheme.accent,
+    backgroundColor: AvTheme.accent,
     alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   primaryText: {
-    color: '#fff',
+    color: AvTheme.accentInk,
     fontWeight: '700',
     fontSize: 16,
   },
@@ -103,6 +122,6 @@ const styles = StyleSheet.create({
     marginTop: 8,
     fontSize: 16,
     fontWeight: '600',
-    color: '#1B6CA8',
+    color: AvTheme.accent,
   },
 });

@@ -6,8 +6,8 @@
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "dsptrainer",
-    "userInterfaceStyle": "automatic",
-    "primaryColor": "#0B3A5C",
+    "userInterfaceStyle": "dark",
+    "primaryColor": "#dff25a",
     "description": "Offline DSP learning: lesson → demo → practice for sampling, spectra, filters, and convolution.",
     "ios": {
       "supportsTablet": true,
@@ -21,7 +21,7 @@
       "package": "com.taylormatson.dsptrainer",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#0B3A5C",
+            "backgroundColor": "#12140f",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
@@ -41,7 +41,7 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#0B3A5C"
+          "backgroundColor": "#12140f"
         }
       ],
       [

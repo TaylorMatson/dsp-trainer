@@ -1,6 +1,7 @@
 import Svg, { Line, Polyline } from 'react-native-svg';
 
 import { View } from '@/components/Themed';
+import { AvTheme } from '@/constants/AvTheme';
 import { generateSineSamples } from '@/signal/sine';
 
 type SinePlotProps = {
@@ -14,7 +15,7 @@ export function SinePlot({
   frequencyHz,
   width = 320,
   height = 140,
-  strokeColor = '#1B6CA8',
+  strokeColor = AvTheme.plotPrimary,
 }: SinePlotProps) {
   const sampleCount = 160;
   const samples = generateSineSamples({
@@ -40,7 +41,7 @@ export function SinePlot({
           y1={midY}
           x2={width}
           y2={midY}
-          stroke="#9AA4B2"
+          stroke={AvTheme.grid}
           strokeWidth={1}
           strokeDasharray="4 4"
         />

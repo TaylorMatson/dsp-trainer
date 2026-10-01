@@ -1,8 +1,7 @@
-// NOTE: The default React Native styling doesn't support server rendering.
-// Server rendered styles should not change between the first render of the HTML
-// and the first render on the client. Typically, web developers will use CSS media queries
-// to render different styles on the client and server, these aren't directly supported in React Native
-// but can be achieved using a styling library like Nativewind.
-export function useColorScheme() {
-  return 'light';
+/**
+ * Product chrome is always the GLSL `_ref` dark surface — ignore system scheme
+ * so SSR and client match (and lesson → demo → practice stay one skin).
+ */
+export function useColorScheme(): 'dark' {
+  return 'dark';
 }
