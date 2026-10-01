@@ -21,13 +21,13 @@ type Props = {
   onInteracted?: () => void;
 };
 
-const FFT_SIZE = 128;
+const FFT_SIZE = 256;
 
 export function WindowingVisualizer({ demo, onInteracted }: Props) {
   const [values, setValues] = useState(() => paramDefaults(demo.params));
   const [windowKind, setWindowKind] = useState<WindowKind>('rectangular');
-  const frequencyHz = values.frequencyHz ?? 17.5;
-  const sampleRateHz = values.sampleRateHz ?? 128;
+  const frequencyHz = values.frequencyHz ?? 437.5;
+  const sampleRateHz = values.sampleRateHz ?? 4096;
 
   const analysis = useMemo(() => {
     const raw = generateSineSamples({
@@ -40,22 +40,26 @@ export function WindowingVisualizer({ demo, onInteracted }: Props) {
     const magnitude = fftMagnitude(windowed);
     const peak = peakBin(magnitude, 1);
     const sideEnergy = sideLobeEnergy(magnitude, peak);
-    return { magnitude, peak, sideEnergy };
+    const cyclesInFrame = (frequencyHz * FFT_SIZE) / sampleRateHz;
+    return { magnitude, peak, sideEnergy, cyclesInFrame };
   }, [frequencyHz, sampleRateHz, windowKind]);
 
-  const source = useCallback((ctx: AvRenderContext) => {
-    const f = ctx.params.frequencyHz ?? frequencyHz;
-    const fs = ctx.params.sampleRateHz ?? sampleRateHz;
-    const playHz = audibleFrequencyHz(f, fs, ctx.outputSampleRateHz);
-    return new Float32Array(
-      generateSineSamples({
-        frequencyHz: playHz,
-        sampleRateHz: ctx.outputSampleRateHz,
-        amplitude: 0.45,
-        sampleCount: ctx.frameCount,
-      }),
-    );
-  }, [frequencyHz, sampleRateHz]);
+  const source = useCallback(
+    (ctx: AvRenderContext) => {
+      const f = ctx.params.frequencyHz ?? frequencyHz;
+      const fs = ctx.params.sampleRateHz ?? sampleRateHz;
+      const playHz = audibleFrequencyHz(f, fs, ctx.outputSampleRateHz);
+      return new Float32Array(
+        generateSineSamples({
+          frequencyHz: playHz,
+          sampleRateHz: ctx.outputSampleRateHz,
+          amplitude: 0.45,
+          sampleCount: ctx.frameCount,
+        }),
+      );
+    },
+    [frequencyHz, sampleRateHz],
+  );
 
   const selectWindow = (kind: WindowKind) => {
     setWindowKind(kind);
@@ -73,7 +77,7 @@ export function WindowingVisualizer({ demo, onInteracted }: Props) {
       analysisSampleRateHz={sampleRateHz}
       source={source}
       onInteracted={onInteracted}
-      hint="Play the tone, then flip Rectangular ↔ Hann and watch side energy drop."
+      hint="Play a mid-range tone, nudge frequency off an integer cycle count, then flip Rectangular ↔ Hann."
       extraControls={
         <View style={styles.toggleRow}>
           <WindowChip
@@ -90,7 +94,8 @@ export function WindowingVisualizer({ demo, onInteracted }: Props) {
       }>
       <SpectrumPlot magnitude={analysis.magnitude} fromBin={1} height={110} />
       <Text style={styles.stat}>
-        {windowKind === 'hann' ? 'Hann' : 'Rectangular'} · peak bin {analysis.peak} ·
+        {windowKind === 'hann' ? 'Hann' : 'Rectangular'} · {frequencyHz.toFixed(1)} Hz @{' '}
+        {sampleRateHz.toFixed(0)} Hz · ~{analysis.cyclesInFrame.toFixed(2)} cycles/frame ·
         side energy {analysis.sideEnergy.toFixed(3)}
       </Text>
     </AvDemoShell>

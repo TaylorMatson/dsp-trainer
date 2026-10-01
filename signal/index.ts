@@ -36,6 +36,7 @@ export {
   encodeWavBytes,
   encodeWavDataUri,
   fadeEdges,
+  normalizePeak,
   resampleLinear,
   toFloat32,
 } from './pcm';

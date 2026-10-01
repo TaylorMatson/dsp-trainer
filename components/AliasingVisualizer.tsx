@@ -66,7 +66,7 @@ export function AliasingVisualizer({ demo, onInteracted }: AliasingVisualizerPro
       analysisSampleRateHz={sampleRateHz}
       source={source}
       onInteracted={onInteracted}
-      hint="Play, then raise frequency past Nyquist — the pitch you hear should match the folded alias.">
+      hint="Play, then change sample rate — playback auto-restarts so the new rate (and any alias) is audible.">
       <WaveformPlot samples={analysis.samples} strokeColor={AvTheme.plotPrimary} />
       <Text style={styles.stat}>
         Nyquist {analysis.nyquist.toFixed(0)} Hz ·{' '}

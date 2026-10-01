@@ -69,6 +69,33 @@ export function fadeEdges(samples: Float32Array, fadeSamples: number): Float32Ar
 }
 
 /**
+ * Scale a buffer so its peak magnitude equals `targetPeak`.
+ * Useful when FIR difference / IIR stages leave the signal too quiet to hear.
+ */
+export function normalizePeak(
+  samples: ArrayLike<number>,
+  targetPeak = 0.55,
+): Float32Array {
+  const source = toFloat32(samples);
+  if (source.length === 0) {
+    return source;
+  }
+  let peak = 0;
+  for (let i = 0; i < source.length; i += 1) {
+    peak = Math.max(peak, Math.abs(source[i] ?? 0));
+  }
+  if (!(peak > 1e-8)) {
+    return source;
+  }
+  const gain = targetPeak / peak;
+  const out = new Float32Array(source.length);
+  for (let i = 0; i < source.length; i += 1) {
+    out[i] = (source[i] ?? 0) * gain;
+  }
+  return out;
+}
+
+/**
  * When a teaching tone sits below an audible floor, map digital frequency
  * (f / fs) onto the output rate so the ear still hears the same relative pitch.
  */

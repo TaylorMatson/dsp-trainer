@@ -8,13 +8,15 @@ import {
   CONTINUOUS_BUFFER_SECONDS,
   DEFAULT_OUTPUT_SAMPLE_RATE_HZ,
 } from '@/constants/AvTheme';
+import { getMasterVolume, subscribeMasterVolume } from '@/audio/masterVolume';
 import type { AvAudioMode, AvRenderContext, AvSampleSource } from '@/audio/types';
 import { encodeWavDataUri, fadeEdges } from '@/signal/pcm';
 
 export type AvPlaybackOptions = {
   audioMode: AvAudioMode;
   source: AvSampleSource;
-  analysisSampleRateHz: number;
+  /** Teaching / analysis rate; may change while the controller lives. */
+  getAnalysisSampleRateHz: () => number;
   outputSampleRateHz?: number;
   getParams: () => Record<string, number>;
 };
@@ -32,10 +34,14 @@ export class AvPlaybackController {
   private pausedAccumSec = 0;
   private playing = false;
   private muted = false;
+  private unsubscribeVolume: (() => void) | null = null;
 
   constructor(private readonly options: AvPlaybackOptions) {
     this.outputSampleRateHz =
       options.outputSampleRateHz ?? DEFAULT_OUTPUT_SAMPLE_RATE_HZ;
+    this.unsubscribeVolume = subscribeMasterVolume(() => {
+      this.applyVolume();
+    });
   }
 
   get isPlaying(): boolean {
@@ -63,6 +69,7 @@ export class AvPlaybackController {
     await this.loadFromSource();
     if (!this.player) return;
     this.player.muted = this.muted;
+    this.applyVolume();
     this.player.play();
     this.playing = true;
     this.startedAtMs = Date.now();
@@ -91,6 +98,15 @@ export class AvPlaybackController {
     }
   }
 
+  /**
+   * Explicit pause → rebuild → play so sample-rate / buffer changes are audible
+   * without requiring a manual replay.
+   */
+  async restartPlayback(): Promise<void> {
+    this.pause();
+    await this.play();
+  }
+
   setMuted(muted: boolean): void {
     this.muted = muted;
     if (this.player) {
@@ -108,6 +124,10 @@ export class AvPlaybackController {
   release(): void {
     this.playing = false;
     this.startedAtMs = null;
+    if (this.unsubscribeVolume) {
+      this.unsubscribeVolume();
+      this.unsubscribeVolume = null;
+    }
     if (this.player) {
       try {
         this.player.pause();
@@ -125,6 +145,12 @@ export class AvPlaybackController {
     return this.pausedAccumSec + live;
   }
 
+  private applyVolume(): void {
+    if (this.player) {
+      this.player.volume = getMasterVolume();
+    }
+  }
+
   private buildContext(): AvRenderContext {
     const seconds =
       this.options.audioMode === 'continuous'
@@ -132,7 +158,7 @@ export class AvPlaybackController {
         : Math.max(0.35, CONTINUOUS_BUFFER_SECONDS);
     return {
       outputSampleRateHz: this.outputSampleRateHz,
-      analysisSampleRateHz: this.options.analysisSampleRateHz,
+      analysisSampleRateHz: this.options.getAnalysisSampleRateHz(),
       frameCount: Math.max(1, Math.round(seconds * this.outputSampleRateHz)),
       timeSec: this.timeSec(),
       params: this.options.getParams(),
@@ -159,7 +185,7 @@ export class AvPlaybackController {
       this.player = createAudioPlayer({ uri }, { updateInterval: 200 });
     }
     this.player.loop = this.options.audioMode === 'continuous';
-    this.player.volume = 0.85;
+    this.applyVolume();
     this.player.muted = this.muted;
     this.player.seekTo(0);
   }

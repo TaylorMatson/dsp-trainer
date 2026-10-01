@@ -64,13 +64,14 @@ export function SpectrumVisualizer({ demo, onInteracted }: Props) {
       analysisSampleRateHz={sampleRateHz}
       source={source}
       onInteracted={onInteracted}
-      hint="Play the tone, then move frequency — the magnitude peak tracks what you hear.">
+      hint="Play, then change sample rate — neighboring bins appear/vanish from leakage and bin width (Δf = fs/N), not new tones.">
       <Text style={styles.label}>Time domain</Text>
       <WaveformPlot samples={analysis.samples} height={100} />
       <Text style={styles.label}>Magnitude spectrum</Text>
       <SpectrumPlot magnitude={analysis.magnitude} fromBin={1} height={100} />
       <Text style={styles.stat}>
-        Peak bin {analysis.peak} ≈ {analysis.peakHz.toFixed(1)} Hz
+        Peak bin {analysis.peak} ≈ {analysis.peakHz.toFixed(1)} Hz · Δf ={' '}
+        {(sampleRateHz / FFT_SIZE).toFixed(2)} Hz/bin
       </Text>
     </AvDemoShell>
   );

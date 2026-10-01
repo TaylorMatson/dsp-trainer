@@ -2,6 +2,7 @@ import Slider from '@react-native-community/slider';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { getMasterVolume, setMasterVolume } from '@/audio/masterVolume';
 import { AvPlaybackController } from '@/audio/playback';
 import type { AvAudioMode, AvSampleSource } from '@/audio/types';
 import { AvTheme } from '@/constants/AvTheme';
@@ -44,23 +45,35 @@ export function AvDemoShell({
 }: AvDemoShellProps) {
   const [transport, setTransport] = useState<'stopped' | 'playing' | 'paused'>('stopped');
   const [muted, setMuted] = useState(false);
+  const [volume, setVolume] = useState(() => getMasterVolume());
   const valuesRef = useRef(values);
+  const analysisRateRef = useRef(analysisSampleRateHz);
   const controllerRef = useRef<AvPlaybackController | null>(null);
   const sourceRef = useRef(source);
+  const transportRef = useRef(transport);
+  const prevSampleRateRef = useRef(analysisSampleRateHz);
 
   useEffect(() => {
     valuesRef.current = values;
   }, [values]);
 
   useEffect(() => {
+    analysisRateRef.current = analysisSampleRateHz;
+  }, [analysisSampleRateHz]);
+
+  useEffect(() => {
     sourceRef.current = source;
   }, [source]);
+
+  useEffect(() => {
+    transportRef.current = transport;
+  }, [transport]);
 
   useEffect(() => {
     const controller = new AvPlaybackController({
       audioMode,
       source: (ctx) => sourceRef.current(ctx),
-      analysisSampleRateHz,
+      getAnalysisSampleRateHz: () => analysisRateRef.current,
       getParams: () => valuesRef.current,
     });
     controllerRef.current = controller;
@@ -70,12 +83,38 @@ export function AvDemoShell({
         controllerRef.current = null;
       }
     };
-  }, [audioMode, analysisSampleRateHz]);
+  }, [audioMode]);
 
   useEffect(() => {
     controllerRef.current?.setMuted(muted);
   }, [muted]);
 
+  // When teaching sample rate changes, pause → play so the new rate is audible.
+  useEffect(() => {
+    const prev = prevSampleRateRef.current;
+    prevSampleRateRef.current = analysisSampleRateHz;
+    if (prev === analysisSampleRateHz) return;
+    if (transportRef.current !== 'playing' && transportRef.current !== 'paused') {
+      return;
+    }
+    let cancelled = false;
+    const handle = setTimeout(() => {
+      void (async () => {
+        const controller = controllerRef.current;
+        if (!controller || cancelled) return;
+        await controller.restartPlayback();
+        if (!cancelled) {
+          setTransport('playing');
+        }
+      })();
+    }, 60);
+    return () => {
+      cancelled = true;
+      clearTimeout(handle);
+    };
+  }, [analysisSampleRateHz]);
+
+  // Other param changes: refresh the loop buffer while playing.
   useEffect(() => {
     if (transport !== 'playing') return;
     const handle = setTimeout(() => {
@@ -115,8 +154,32 @@ export function AvDemoShell({
     mark();
   };
 
+  const onVolumeChange = (next: number) => {
+    setVolume(next);
+    setMasterVolume(next);
+  };
+
   return (
     <View style={styles.stage}>
+      <View style={styles.volumeRow} testID="master-volume">
+        <Text style={styles.sliderLabel}>
+          Master volume{' '}
+          <Text style={styles.sliderValue}>{Math.round(volume * 100)}%</Text>
+        </Text>
+        <Slider
+          style={styles.slider}
+          minimumValue={0}
+          maximumValue={1}
+          step={0.01}
+          value={volume}
+          minimumTrackTintColor={AvTheme.accent}
+          maximumTrackTintColor={AvTheme.line}
+          thumbTintColor={AvTheme.accent}
+          onValueChange={onVolumeChange}
+          accessibilityLabel="Master volume"
+        />
+      </View>
+
       <View style={styles.stageHead}>
         <Text style={styles.kicker}>{title}</Text>
         <View style={styles.lamps} accessibilityElementsHidden>
@@ -139,7 +202,8 @@ export function AvDemoShell({
             accessibilityRole="button"
             accessibilityLabel="Pause"
             onPress={onPause}
-            style={styles.actionPrimary}>
+            style={styles.actionPrimary}
+            testID="demo-pause">
             <Text style={styles.actionPrimaryText}>Pause</Text>
           </Pressable>
         ) : (
@@ -149,7 +213,8 @@ export function AvDemoShell({
             onPress={() => {
               void onPlay();
             }}
-            style={styles.actionPrimary}>
+            style={styles.actionPrimary}
+            testID="demo-play">
             <Text style={styles.actionPrimaryText}>Play</Text>
           </Pressable>
         )}
@@ -159,7 +224,8 @@ export function AvDemoShell({
           onPress={() => {
             void onRewind();
           }}
-          style={styles.actionGhost}>
+          style={styles.actionGhost}
+          testID="demo-rewind">
           <Text style={styles.actionGhostText}>Rewind</Text>
         </Pressable>
         {allowMute ? (
@@ -167,7 +233,8 @@ export function AvDemoShell({
             accessibilityRole="button"
             accessibilityLabel={muted ? 'Unmute' : 'Mute'}
             onPress={() => setMuted((m) => !m)}
-            style={styles.actionGhost}>
+            style={styles.actionGhost}
+            testID="demo-mute">
             <Text style={styles.actionGhostText}>{muted ? 'Unmute' : 'Mute'}</Text>
           </Pressable>
         ) : null}
@@ -232,6 +299,12 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     padding: 12,
     gap: 10,
+  },
+  volumeRow: {
+    gap: 4,
+    paddingBottom: 4,
+    borderBottomColor: AvTheme.line,
+    borderBottomWidth: 1,
   },
   stageHead: {
     flexDirection: 'row',

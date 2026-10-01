@@ -1,10 +1,10 @@
-import { Link, Stack, useLocalSearchParams } from 'expo-router';
+import { Link, Stack, useLocalSearchParams, type Href } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import { AvTheme } from '@/constants/AvTheme';
-import { getModuleById } from '@/content/modules';
+import { getModuleById, getNextModule } from '@/content/modules';
 import { useProgress } from '@/progress/ProgressContext';
 import { scorePractice } from '@/progress/types';
 
@@ -12,6 +12,7 @@ export default function ModulePracticeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const module = getModuleById(id ?? '');
   const practice = module?.practice;
+  const nextModule = module ? getNextModule(module.id) : undefined;
   const { recordPractice } = useProgress();
   const scrollRef = useRef<ScrollView>(null);
 
@@ -80,19 +81,13 @@ export default function ModulePracticeScreen() {
             <Text style={styles.scoreBannerStatus}>
               {displayPassed ? 'Passed — nice work.' : 'Not yet — review and retry.'}
             </Text>
-            {displayPassed ? (
-              <Link href={`/module/${module.id}`} style={styles.link}>
-                Back to module ✓
-              </Link>
-            ) : (
-              <Pressable
-                accessibilityRole="button"
-                style={styles.secondary}
-                onPress={retry}
-                testID="practice-retry">
-                <Text style={styles.secondaryText}>Retry</Text>
-              </Pressable>
-            )}
+            <PostCheckNav
+              moduleId={module.id}
+              nextModuleId={nextModule?.id}
+              nextModuleTitle={nextModule?.title}
+              showRetry={!displayPassed}
+              onRetry={retry}
+            />
           </View>
         ) : null}
 
@@ -150,27 +145,67 @@ export default function ModulePracticeScreen() {
             <Text style={styles.primaryText}>Check answers</Text>
           </Pressable>
         ) : (
-          <View style={styles.result}>
+          <View style={styles.result} testID="practice-result-nav">
             <Text style={styles.resultTitle}>
               Score {displayScore}/{practice.challenges.length}{' '}
               {displayPassed ? '— passed' : '— try again'}
             </Text>
-            {!displayPassed ? (
-              <Pressable
-                accessibilityRole="button"
-                style={styles.secondary}
-                onPress={retry}>
-                <Text style={styles.secondaryText}>Retry</Text>
-              </Pressable>
-            ) : (
-              <Link href={`/module/${module.id}`} style={styles.link}>
-                Back to module ✓
-              </Link>
-            )}
+            <PostCheckNav
+              moduleId={module.id}
+              nextModuleId={nextModule?.id}
+              nextModuleTitle={nextModule?.title}
+              showRetry={!displayPassed}
+              onRetry={retry}
+            />
           </View>
         )}
       </ScrollView>
     </>
+  );
+}
+
+function PostCheckNav({
+  moduleId,
+  nextModuleId,
+  nextModuleTitle,
+  showRetry,
+  onRetry,
+}: {
+  moduleId: string;
+  nextModuleId?: string;
+  nextModuleTitle?: string;
+  showRetry: boolean;
+  onRetry: () => void;
+}) {
+  return (
+    <View style={styles.navRow}>
+      {showRetry ? (
+        <Pressable
+          accessibilityRole="button"
+          style={styles.secondary}
+          onPress={onRetry}
+          testID="practice-retry">
+          <Text style={styles.secondaryText}>Retry</Text>
+        </Pressable>
+      ) : null}
+      {nextModuleId ? (
+        <Link
+          href={`/module/${nextModuleId}` as Href}
+          style={styles.navPrimary}
+          testID="practice-next-module">
+          <Text style={styles.navPrimaryText}>
+            Next module{nextModuleTitle ? `: ${nextModuleTitle}` : ''}
+          </Text>
+        </Link>
+      ) : (
+        <Link href={`/module/${moduleId}` as Href} style={styles.navPrimary} testID="practice-back-module">
+          <Text style={styles.navPrimaryText}>Back to module ✓</Text>
+        </Link>
+      )}
+      <Link href={'/' as Href} style={styles.link} testID="practice-back-menu">
+        Back to menu
+      </Link>
+    </View>
   );
 }
 
@@ -286,6 +321,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: AvTheme.ink,
   },
+  navRow: {
+    gap: 10,
+    marginTop: 4,
+  },
   secondary: {
     paddingVertical: 10,
     paddingHorizontal: 14,
@@ -299,6 +338,21 @@ const styles = StyleSheet.create({
   secondaryText: {
     fontWeight: '600',
     color: AvTheme.ink,
+  },
+  navPrimary: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: AvTheme.accent,
+    backgroundColor: AvTheme.accent,
+    alignSelf: 'stretch',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  navPrimaryText: {
+    color: AvTheme.accentInk,
+    fontWeight: '700',
+    fontSize: 15,
   },
   link: {
     fontSize: 16,

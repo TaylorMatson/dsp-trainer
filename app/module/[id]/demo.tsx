@@ -1,6 +1,6 @@
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { AliasingVisualizer } from '@/components/AliasingVisualizer';
 import { ConvolutionVisualizer } from '@/components/ConvolutionVisualizer';
@@ -47,14 +47,6 @@ export default function ModuleDemoScreen() {
       />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
         <DemoBody componentId={demo.componentId} demo={demo} onInteracted={onInteracted} />
-        <Pressable
-          accessibilityRole="button"
-          style={styles.primary}
-          onPress={() => {
-            void markDemoDone(module.id);
-          }}>
-          <Text style={styles.primaryText}>Mark demo complete</Text>
-        </Pressable>
         <Link href={`/module/${module.id}/practice`} style={styles.link}>
           Continue to practice →
         </Link>
@@ -109,22 +101,6 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '700',
     color: AvTheme.ink,
-  },
-  primary: {
-    marginTop: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: AvTheme.accent,
-    backgroundColor: AvTheme.accent,
-    alignItems: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  primaryText: {
-    color: AvTheme.accentInk,
-    fontWeight: '700',
-    fontSize: 16,
   },
   link: {
     fontSize: 16,

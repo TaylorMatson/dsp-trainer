@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getModuleById, listReadyModules, MODULES } from './modules';
+import { getModuleById, getNextModule, listReadyModules, MODULES } from './modules';
 import { isModuleReady } from './schema';
 
 const REQUIRED_READY_IDS = [
@@ -56,5 +56,40 @@ describe('curriculum pack content', () => {
         );
       }
     }
+  });
+
+  it('gives each lesson substantial reading (paragraphs + equations/examples)', () => {
+    for (const module of MODULES) {
+      for (const lesson of module.lessons) {
+        const paragraphs = lesson.blocks.filter((b) => b.type === 'paragraph');
+        const callouts = lesson.blocks.filter((b) => b.type === 'callout');
+        expect(paragraphs.length, module.id).toBeGreaterThanOrEqual(2);
+        expect(callouts.length + paragraphs.length, module.id).toBeGreaterThanOrEqual(3);
+        const joined = lesson.blocks.map((b) => b.text).join(' ');
+        expect(joined.length, module.id).toBeGreaterThan(400);
+      }
+    }
+  });
+
+  it('explains Module 2 sine symbols in the lesson', () => {
+    const lesson = getModuleById('discrete-sine')!.lessons[0]!;
+    const text = lesson.blocks.map((b) => b.text).join(' ');
+    expect(text).toMatch(/x\[n\]/);
+    expect(text).toMatch(/\bfs\b/);
+    expect(text).toMatch(/amplitude|A:/i);
+    expect(text).toMatch(/phase|φ/i);
+  });
+
+  it('uses audible windowing demo defaults', () => {
+    const demo = getModuleById('windowing')!.demos[0]!;
+    const f = demo.params.find((p) => p.id === 'frequencyHz')!;
+    const fs = demo.params.find((p) => p.id === 'sampleRateHz')!;
+    expect(f.defaultValue).toBeGreaterThanOrEqual(200);
+    expect(fs.defaultValue).toBeGreaterThanOrEqual(2048);
+  });
+
+  it('resolves next module in curriculum order', () => {
+    expect(getNextModule('sampling-aliasing')?.id).toBe('discrete-sine');
+    expect(getNextModule('convolution-intro')).toBeUndefined();
   });
 });

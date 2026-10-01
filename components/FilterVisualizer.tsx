@@ -8,8 +8,9 @@ import { AvTheme } from '@/constants/AvTheme';
 import type { Demo } from '@/content/schema';
 import {
   applyTeachingFilter,
+  audibleFrequencyHz,
   generateSineSamples,
-  resampleLinear,
+  normalizePeak,
   type FilterFamily,
   type FilterKind,
 } from '@/signal';
@@ -41,14 +42,12 @@ export function FilterVisualizer({ demo, onInteracted }: Props) {
       const low = ctx.params.lowHz ?? lowHz;
       const high = ctx.params.highHz ?? highHz;
       const str = ctx.params.strength ?? strength;
-      // Build at teaching rate (matches plots), filter, then upsample for the speaker.
-      const teachingCount = Math.max(
-        ANALYSIS_COUNT,
-        Math.round(ANALYSIS_FS * (ctx.frameCount / ctx.outputSampleRateHz)),
-      );
-      const mixed = mixTones(low, high, ANALYSIS_FS, teachingCount);
+      // Map teaching tones onto the device rate so LP/HP output is audible.
+      const playLow = audibleFrequencyHz(low, ANALYSIS_FS, ctx.outputSampleRateHz);
+      const playHigh = audibleFrequencyHz(high, ANALYSIS_FS, ctx.outputSampleRateHz);
+      const mixed = mixTones(playLow, playHigh, ctx.outputSampleRateHz, ctx.frameCount);
       const filtered = applyTeachingFilter(mixed, family, kind, str);
-      return resampleLinear(filtered, ANALYSIS_FS, ctx.outputSampleRateHz);
+      return normalizePeak(filtered, 0.55);
     },
     [lowHz, highHz, strength, family, kind],
   );

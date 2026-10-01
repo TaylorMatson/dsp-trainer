@@ -1,5 +1,5 @@
-import { Link, Stack, useLocalSearchParams } from 'expo-router';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { Link, Stack, useLocalSearchParams, type Href } from 'expo-router';
+import { ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
 import { AvTheme } from '@/constants/AvTheme';
@@ -21,6 +21,10 @@ export default function ModuleLessonScreen() {
     );
   }
 
+  const continueToDemo = () => {
+    void markLessonDone(module.id);
+  };
+
   return (
     <>
       <Stack.Screen options={{ title: lesson.title }} />
@@ -30,14 +34,10 @@ export default function ModuleLessonScreen() {
         {lesson.blocks.map((block, index) => (
           <LessonBlockView key={`${lesson.id}-${index}`} block={block} />
         ))}
-        <Pressable
-          style={styles.primary}
-          onPress={() => {
-            void markLessonDone(module.id);
-          }}>
-          <Text style={styles.primaryText}>Mark lesson complete</Text>
-        </Pressable>
-        <Link href={`/module/${module.id}/demo`} style={styles.link}>
+        <Link
+          href={`/module/${module.id}/demo` as Href}
+          style={styles.link}
+          onPress={continueToDemo}>
           Continue to demo →
         </Link>
       </ScrollView>
@@ -102,24 +102,8 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: AvTheme.teal,
   },
-  primary: {
-    marginTop: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: AvTheme.accent,
-    backgroundColor: AvTheme.accent,
-    alignItems: 'center',
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  primaryText: {
-    color: AvTheme.accentInk,
-    fontWeight: '700',
-    fontSize: 16,
-  },
   link: {
-    marginTop: 8,
+    marginTop: 12,
     fontSize: 16,
     fontWeight: '600',
     color: AvTheme.accent,

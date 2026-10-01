@@ -6,6 +6,7 @@ import {
   encodeWavBytes,
   encodeWavDataUri,
   fadeEdges,
+  normalizePeak,
   resampleLinear,
   toFloat32,
 } from './pcm';
@@ -45,6 +46,13 @@ describe('fadeEdges', () => {
     expect(faded[0]).toBeCloseTo(0, 5);
     expect(faded[faded.length - 1]).toBeCloseTo(0, 5);
     expect(faded[2]).toBeCloseTo(1, 5);
+  });
+});
+
+describe('normalizePeak', () => {
+  it('scales a quiet buffer up to the target peak', () => {
+    const out = normalizePeak([0.1, -0.05, 0], 0.5);
+    expect(Math.max(...out.map(Math.abs))).toBeCloseTo(0.5, 5);
   });
 });
 

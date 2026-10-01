@@ -6,7 +6,12 @@ import { WaveformPlot } from '@/components/WaveformPlot';
 import type { AvRenderContext } from '@/audio/types';
 import { AvTheme } from '@/constants/AvTheme';
 import type { Demo } from '@/content/schema';
-import { generateSineSamples } from '@/signal';
+import {
+  generateSineSamples,
+  isAliasing,
+  nyquistHz,
+  resampleLinear,
+} from '@/signal';
 
 type Props = {
   demo: Demo;
@@ -30,18 +35,29 @@ export function SineGeneratorVisualizer({ demo, onInteracted }: Props) {
     [frequencyHz, sampleRateHz, amplitude],
   );
 
-  const source = useCallback((ctx: AvRenderContext) => {
-    const f = ctx.params.frequencyHz ?? frequencyHz;
-    const a = ctx.params.amplitude ?? amplitude;
-    return new Float32Array(
-      generateSineSamples({
+  const nyquist = nyquistHz(sampleRateHz);
+  const aliasing = isAliasing(frequencyHz, sampleRateHz);
+
+  // Generate at teaching fs, then upsample — sample-rate / Nyquist changes are audible.
+  const source = useCallback(
+    (ctx: AvRenderContext) => {
+      const f = ctx.params.frequencyHz ?? frequencyHz;
+      const a = ctx.params.amplitude ?? amplitude;
+      const fs = ctx.params.sampleRateHz ?? sampleRateHz;
+      const teachingCount = Math.max(
+        64,
+        Math.round(fs * (ctx.frameCount / ctx.outputSampleRateHz)),
+      );
+      const teaching = generateSineSamples({
         frequencyHz: f,
-        sampleRateHz: ctx.outputSampleRateHz,
+        sampleRateHz: fs,
         amplitude: a * 0.55,
-        sampleCount: ctx.frameCount,
-      }),
-    );
-  }, [frequencyHz, amplitude]);
+        sampleCount: teachingCount,
+      });
+      return resampleLinear(teaching, fs, ctx.outputSampleRateHz);
+    },
+    [frequencyHz, amplitude, sampleRateHz],
+  );
 
   return (
     <AvDemoShell
@@ -54,10 +70,12 @@ export function SineGeneratorVisualizer({ demo, onInteracted }: Props) {
       analysisSampleRateHz={sampleRateHz}
       source={source}
       onInteracted={onInteracted}
-      hint="Play, then nudge frequency or amplitude — the tone and the plot share one formula.">
+      hint="Play, then drop sample rate until the tone folds past Nyquist — pitch should jump with the alias.">
       <WaveformPlot samples={samples} />
       <Text style={styles.stat}>
-        Discrete sine · {frequencyHz.toFixed(0)} Hz @ fs {sampleRateHz.toFixed(0)} Hz
+        Discrete sine · {frequencyHz.toFixed(0)} Hz @ fs {sampleRateHz.toFixed(0)} Hz ·
+        Nyquist {nyquist.toFixed(0)} Hz
+        {aliasing ? ' · aliasing' : ''}
       </Text>
     </AvDemoShell>
   );
