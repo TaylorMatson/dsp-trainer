@@ -1,16 +1,14 @@
-import { useMemo, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { StyleSheet, Text } from 'react-native';
 
-import {
-  bumpParam,
-  DemoParamControls,
-  paramDefaults,
-} from '@/components/DemoParamControls';
+import { AvDemoShell, paramDefaults } from '@/components/AvDemoShell';
 import { SpectrumPlot } from '@/components/SpectrumPlot';
-import { Text, View } from '@/components/Themed';
 import { WaveformPlot } from '@/components/WaveformPlot';
+import type { AvRenderContext } from '@/audio/types';
+import { AvTheme } from '@/constants/AvTheme';
 import type { Demo } from '@/content/schema';
 import {
+  audibleFrequencyHz,
   binFrequencyHz,
   fftMagnitude,
   generateSineSamples,
@@ -41,9 +39,32 @@ export function SpectrumVisualizer({ demo, onInteracted }: Props) {
     return { samples, magnitude, peak, peakHz };
   }, [frequencyHz, sampleRateHz]);
 
+  const source = useCallback((ctx: AvRenderContext) => {
+    const f = ctx.params.frequencyHz ?? frequencyHz;
+    const fs = ctx.params.sampleRateHz ?? sampleRateHz;
+    const playHz = audibleFrequencyHz(f, fs, ctx.outputSampleRateHz);
+    return new Float32Array(
+      generateSineSamples({
+        frequencyHz: playHz,
+        sampleRateHz: ctx.outputSampleRateHz,
+        amplitude: 0.45,
+        sampleCount: ctx.frameCount,
+      }),
+    );
+  }, [frequencyHz, sampleRateHz]);
+
   return (
-    <View style={styles.wrap}>
-      <Text style={styles.caption}>{demo.summary}</Text>
+    <AvDemoShell
+      title={demo.title}
+      summary={demo.summary}
+      params={demo.params}
+      values={values}
+      onValuesChange={setValues}
+      audioMode="continuous"
+      analysisSampleRateHz={sampleRateHz}
+      source={source}
+      onInteracted={onInteracted}
+      hint="Play the tone, then move frequency — the magnitude peak tracks what you hear.">
       <Text style={styles.label}>Time domain</Text>
       <WaveformPlot samples={analysis.samples} height={100} />
       <Text style={styles.label}>Magnitude spectrum</Text>
@@ -51,39 +72,21 @@ export function SpectrumVisualizer({ demo, onInteracted }: Props) {
       <Text style={styles.stat}>
         Peak bin {analysis.peak} ≈ {analysis.peakHz.toFixed(1)} Hz
       </Text>
-      <DemoParamControls
-        params={demo.params}
-        values={values}
-        onBump={(id, delta, min, max) => {
-          setValues((prev) => bumpParam(prev, id, delta, min, max));
-          onInteracted?.();
-        }}
-      />
-    </View>
+    </AvDemoShell>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    gap: 12,
-    alignItems: 'center',
-    width: '100%',
-  },
-  caption: {
-    fontSize: 14,
-    opacity: 0.75,
-    alignSelf: 'stretch',
-    lineHeight: 20,
-  },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
-    opacity: 0.7,
+    fontFamily: 'SpaceMono',
+    fontSize: 11,
+    color: AvTheme.muted,
     alignSelf: 'stretch',
   },
   stat: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    color: AvTheme.ink,
     alignSelf: 'stretch',
   },
 });

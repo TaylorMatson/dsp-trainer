@@ -1,13 +1,10 @@
-import { useMemo, useState } from 'react';
-import { StyleSheet } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { StyleSheet, Text } from 'react-native';
 
-import {
-  bumpParam,
-  DemoParamControls,
-  paramDefaults,
-} from '@/components/DemoParamControls';
-import { Text, View } from '@/components/Themed';
+import { AvDemoShell, paramDefaults } from '@/components/AvDemoShell';
 import { WaveformPlot } from '@/components/WaveformPlot';
+import type { AvRenderContext } from '@/audio/types';
+import { AvTheme } from '@/constants/AvTheme';
 import type { Demo } from '@/content/schema';
 import { generateSineSamples } from '@/signal';
 
@@ -33,40 +30,44 @@ export function SineGeneratorVisualizer({ demo, onInteracted }: Props) {
     [frequencyHz, sampleRateHz, amplitude],
   );
 
+  const source = useCallback((ctx: AvRenderContext) => {
+    const f = ctx.params.frequencyHz ?? frequencyHz;
+    const a = ctx.params.amplitude ?? amplitude;
+    return new Float32Array(
+      generateSineSamples({
+        frequencyHz: f,
+        sampleRateHz: ctx.outputSampleRateHz,
+        amplitude: a * 0.55,
+        sampleCount: ctx.frameCount,
+      }),
+    );
+  }, [frequencyHz, amplitude]);
+
   return (
-    <View style={styles.wrap}>
-      <Text style={styles.caption}>{demo.summary}</Text>
+    <AvDemoShell
+      title={demo.title}
+      summary={demo.summary}
+      params={demo.params}
+      values={values}
+      onValuesChange={setValues}
+      audioMode="continuous"
+      analysisSampleRateHz={sampleRateHz}
+      source={source}
+      onInteracted={onInteracted}
+      hint="Play, then nudge frequency or amplitude — the tone and the plot share one formula.">
       <WaveformPlot samples={samples} />
       <Text style={styles.stat}>
         Discrete sine · {frequencyHz.toFixed(0)} Hz @ fs {sampleRateHz.toFixed(0)} Hz
       </Text>
-      <DemoParamControls
-        params={demo.params}
-        values={values}
-        onBump={(id, delta, min, max) => {
-          setValues((prev) => bumpParam(prev, id, delta, min, max));
-          onInteracted?.();
-        }}
-      />
-    </View>
+    </AvDemoShell>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    gap: 14,
-    alignItems: 'center',
-    width: '100%',
-  },
-  caption: {
-    fontSize: 14,
-    opacity: 0.75,
-    alignSelf: 'stretch',
-    lineHeight: 20,
-  },
   stat: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    color: AvTheme.ink,
     alignSelf: 'stretch',
   },
 });

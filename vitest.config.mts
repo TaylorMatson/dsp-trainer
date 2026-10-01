@@ -15,6 +15,7 @@ export default defineConfig({
       'signal/**/*.test.ts',
       'content/**/*.test.ts',
       'progress/**/*.test.ts',
+      'audio/**/*.test.ts',
     ],
   },
 });

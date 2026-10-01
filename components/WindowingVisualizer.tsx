@@ -1,15 +1,13 @@
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import {
-  bumpParam,
-  DemoParamControls,
-  paramDefaults,
-} from '@/components/DemoParamControls';
+import { AvDemoShell, paramDefaults } from '@/components/AvDemoShell';
 import { SpectrumPlot } from '@/components/SpectrumPlot';
-import { Text, View } from '@/components/Themed';
+import type { AvRenderContext } from '@/audio/types';
+import { AvTheme } from '@/constants/AvTheme';
 import type { Demo } from '@/content/schema';
 import {
+  audibleFrequencyHz,
   applyWindow,
   fftMagnitude,
   generateSineSamples,
@@ -45,40 +43,57 @@ export function WindowingVisualizer({ demo, onInteracted }: Props) {
     return { magnitude, peak, sideEnergy };
   }, [frequencyHz, sampleRateHz, windowKind]);
 
+  const source = useCallback((ctx: AvRenderContext) => {
+    const f = ctx.params.frequencyHz ?? frequencyHz;
+    const fs = ctx.params.sampleRateHz ?? sampleRateHz;
+    const playHz = audibleFrequencyHz(f, fs, ctx.outputSampleRateHz);
+    return new Float32Array(
+      generateSineSamples({
+        frequencyHz: playHz,
+        sampleRateHz: ctx.outputSampleRateHz,
+        amplitude: 0.45,
+        sampleCount: ctx.frameCount,
+      }),
+    );
+  }, [frequencyHz, sampleRateHz]);
+
   const selectWindow = (kind: WindowKind) => {
     setWindowKind(kind);
     onInteracted?.();
   };
 
   return (
-    <View style={styles.wrap}>
-      <Text style={styles.caption}>{demo.summary}</Text>
-      <View style={styles.toggleRow}>
-        <WindowChip
-          label="Rectangular"
-          active={windowKind === 'rectangular'}
-          onPress={() => selectWindow('rectangular')}
-        />
-        <WindowChip
-          label="Hann"
-          active={windowKind === 'hann'}
-          onPress={() => selectWindow('hann')}
-        />
-      </View>
+    <AvDemoShell
+      title={demo.title}
+      summary={demo.summary}
+      params={demo.params}
+      values={values}
+      onValuesChange={setValues}
+      audioMode="continuous"
+      analysisSampleRateHz={sampleRateHz}
+      source={source}
+      onInteracted={onInteracted}
+      hint="Play the tone, then flip Rectangular ↔ Hann and watch side energy drop."
+      extraControls={
+        <View style={styles.toggleRow}>
+          <WindowChip
+            label="Rectangular"
+            active={windowKind === 'rectangular'}
+            onPress={() => selectWindow('rectangular')}
+          />
+          <WindowChip
+            label="Hann"
+            active={windowKind === 'hann'}
+            onPress={() => selectWindow('hann')}
+          />
+        </View>
+      }>
       <SpectrumPlot magnitude={analysis.magnitude} fromBin={1} height={110} />
       <Text style={styles.stat}>
         {windowKind === 'hann' ? 'Hann' : 'Rectangular'} · peak bin {analysis.peak} ·
         side energy {analysis.sideEnergy.toFixed(3)}
       </Text>
-      <DemoParamControls
-        params={demo.params}
-        values={values}
-        onBump={(id, delta, min, max) => {
-          setValues((prev) => bumpParam(prev, id, delta, min, max));
-          onInteracted?.();
-        }}
-      />
-    </View>
+    </AvDemoShell>
   );
 }
 
@@ -116,17 +131,6 @@ function sideLobeEnergy(magnitude: ArrayLike<number>, peak: number): number {
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    gap: 12,
-    alignItems: 'center',
-    width: '100%',
-  },
-  caption: {
-    fontSize: 14,
-    opacity: 0.75,
-    alignSelf: 'stretch',
-    lineHeight: 20,
-  },
   toggleRow: {
     flexDirection: 'row',
     gap: 10,
@@ -135,19 +139,23 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(27, 108, 168, 0.12)',
+    borderColor: AvTheme.line,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   chipActive: {
-    backgroundColor: 'rgba(27, 108, 168, 0.32)',
+    borderColor: AvTheme.accent,
+    backgroundColor: 'rgba(223, 242, 90, 0.12)',
   },
   chipText: {
     fontWeight: '600',
     fontSize: 14,
+    color: AvTheme.ink,
   },
   stat: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    color: AvTheme.ink,
     alignSelf: 'stretch',
   },
 });

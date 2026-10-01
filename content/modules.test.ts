@@ -47,4 +47,14 @@ describe('curriculum pack content', () => {
       }
     }
   });
+
+  it('declares audio mode on every curriculum demo', () => {
+    for (const module of MODULES) {
+      for (const demo of module.demos) {
+        expect(demo.audio?.mode === 'continuous' || demo.audio?.mode === 'oneshot').toBe(
+          true,
+        );
+      }
+    }
+  });
 });

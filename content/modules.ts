@@ -40,10 +40,11 @@ export const MODULES: ModuleContent[] = [
     demos: [
       {
         id: 'aliasing-visual',
-        title: 'See aliasing',
+        title: 'See & hear aliasing',
         summary:
-          'Raise the tone frequency relative to sample rate and watch the reconstructed wave fold into a lower alias.',
+          'Raise the tone frequency relative to sample rate, watch the wave fold, and hear the aliased pitch.',
         componentId: 'aliasing-visualizer',
+        audio: { mode: 'continuous' },
         params: [
           {
             id: 'frequencyHz',
@@ -138,8 +139,9 @@ export const MODULES: ModuleContent[] = [
         id: 'sine-gen',
         title: 'Generate a sine',
         summary:
-          'Adjust frequency and amplitude and watch the discrete waveform redraw from the sine formula.',
+          'Adjust frequency and amplitude — watch the discrete waveform and hear the matching tone.',
         componentId: 'sine-generator',
+        audio: { mode: 'continuous' },
         params: [
           {
             id: 'frequencyHz',
@@ -254,8 +256,9 @@ export const MODULES: ModuleContent[] = [
         id: 'spectrum-demo',
         title: 'Time and spectrum',
         summary:
-          'Change the tone frequency and watch the waveform and magnitude peak move together.',
+          'Change the tone frequency and watch the waveform and magnitude peak move together while you listen.',
         componentId: 'spectrum-visualizer',
+        audio: { mode: 'continuous' },
         params: [
           {
             id: 'frequencyHz',
@@ -353,8 +356,9 @@ export const MODULES: ModuleContent[] = [
         id: 'window-demo',
         title: 'Leakage vs Hann',
         summary:
-          'Use a non-integer cycle count, then switch Rectangular ↔ Hann and watch side energy drop.',
+          'Hear the tone, use a non-integer cycle count, then switch Rectangular ↔ Hann and watch side energy drop.',
         componentId: 'windowing-visualizer',
+        audio: { mode: 'continuous' },
         params: [
           {
             id: 'frequencyHz',
@@ -457,8 +461,9 @@ export const MODULES: ModuleContent[] = [
         id: 'filter-demo',
         title: 'LP / HP playground',
         summary:
-          'Mix a low and high sine, then toggle FIR/IIR and lowpass/highpass to see what survives.',
+          'Mix a low and high sine, then toggle FIR/IIR and lowpass/highpass — hear and see what survives.',
         componentId: 'filter-visualizer',
+        audio: { mode: 'continuous' },
         params: [
           {
             id: 'lowHz',
@@ -569,8 +574,9 @@ export const MODULES: ModuleContent[] = [
         id: 'conv-demo',
         title: 'Echo by convolution',
         summary:
-          'Convolve a short burst with either a unit impulse or an echo kernel and compare outputs.',
+          'Play a short burst through a unit impulse or echo kernel — hear the delayed tap and compare plots.',
         componentId: 'convolution-visualizer',
+        audio: { mode: 'oneshot' },
         params: [
           {
             id: 'useEcho',

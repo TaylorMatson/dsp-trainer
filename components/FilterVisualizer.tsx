@@ -1,17 +1,15 @@
-import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
-import {
-  bumpParam,
-  DemoParamControls,
-  paramDefaults,
-} from '@/components/DemoParamControls';
-import { Text, View } from '@/components/Themed';
+import { AvDemoShell, paramDefaults } from '@/components/AvDemoShell';
 import { WaveformPlot } from '@/components/WaveformPlot';
+import type { AvRenderContext } from '@/audio/types';
+import { AvTheme } from '@/constants/AvTheme';
 import type { Demo } from '@/content/schema';
 import {
   applyTeachingFilter,
   generateSineSamples,
+  resampleLinear,
   type FilterFamily,
   type FilterKind,
 } from '@/signal';
@@ -21,6 +19,9 @@ type Props = {
   onInteracted?: () => void;
 };
 
+const ANALYSIS_FS = 128;
+const ANALYSIS_COUNT = 128;
+
 export function FilterVisualizer({ demo, onInteracted }: Props) {
   const [values, setValues] = useState(() => paramDefaults(demo.params));
   const [family, setFamily] = useState<FilterFamily>('fir');
@@ -28,28 +29,29 @@ export function FilterVisualizer({ demo, onInteracted }: Props) {
   const lowHz = values.lowHz ?? 4;
   const highHz = values.highHz ?? 32;
   const strength = values.strength ?? (family === 'fir' ? 5 : 0.15);
-  const sampleRateHz = 128;
 
   const analysis = useMemo(() => {
-    const low = generateSineSamples({
-      frequencyHz: lowHz,
-      sampleRateHz,
-      amplitude: 0.55,
-      sampleCount: 128,
-    });
-    const high = generateSineSamples({
-      frequencyHz: highHz,
-      sampleRateHz,
-      amplitude: 0.45,
-      sampleCount: 128,
-    });
-    const mixed = new Float64Array(128);
-    for (let i = 0; i < 128; i += 1) {
-      mixed[i] = (low[i] ?? 0) + (high[i] ?? 0);
-    }
+    const mixed = mixTones(lowHz, highHz, ANALYSIS_FS, ANALYSIS_COUNT);
     const filtered = applyTeachingFilter(mixed, family, kind, strength);
     return { mixed, filtered };
   }, [lowHz, highHz, family, kind, strength]);
+
+  const source = useCallback(
+    (ctx: AvRenderContext) => {
+      const low = ctx.params.lowHz ?? lowHz;
+      const high = ctx.params.highHz ?? highHz;
+      const str = ctx.params.strength ?? strength;
+      // Build at teaching rate (matches plots), filter, then upsample for the speaker.
+      const teachingCount = Math.max(
+        ANALYSIS_COUNT,
+        Math.round(ANALYSIS_FS * (ctx.frameCount / ctx.outputSampleRateHz)),
+      );
+      const mixed = mixTones(low, high, ANALYSIS_FS, teachingCount);
+      const filtered = applyTeachingFilter(mixed, family, kind, str);
+      return resampleLinear(filtered, ANALYSIS_FS, ctx.outputSampleRateHz);
+    },
+    [lowHz, highHz, strength, family, kind],
+  );
 
   const pickFamily = (next: FilterFamily) => {
     setFamily(next);
@@ -61,38 +63,70 @@ export function FilterVisualizer({ demo, onInteracted }: Props) {
   };
 
   return (
-    <View style={styles.wrap}>
-      <Text style={styles.caption}>{demo.summary}</Text>
-      <View style={styles.toggleRow}>
-        <Chip label="FIR" active={family === 'fir'} onPress={() => pickFamily('fir')} />
-        <Chip label="IIR" active={family === 'iir'} onPress={() => pickFamily('iir')} />
-        <Chip
-          label="Lowpass"
-          active={kind === 'lowpass'}
-          onPress={() => pickKind('lowpass')}
-        />
-        <Chip
-          label="Highpass"
-          active={kind === 'highpass'}
-          onPress={() => pickKind('highpass')}
-        />
-      </View>
+    <AvDemoShell
+      title={demo.title}
+      summary={demo.summary}
+      params={demo.params}
+      values={values}
+      onValuesChange={setValues}
+      audioMode="continuous"
+      analysisSampleRateHz={ANALYSIS_FS}
+      source={source}
+      onInteracted={onInteracted}
+      hint="Play the mix, then flip FIR/IIR or LP/HP — heard output matches the green trace."
+      extraControls={
+        <View style={styles.toggleRow}>
+          <Chip label="FIR" active={family === 'fir'} onPress={() => pickFamily('fir')} />
+          <Chip label="IIR" active={family === 'iir'} onPress={() => pickFamily('iir')} />
+          <Chip
+            label="Lowpass"
+            active={kind === 'lowpass'}
+            onPress={() => pickKind('lowpass')}
+          />
+          <Chip
+            label="Highpass"
+            active={kind === 'highpass'}
+            onPress={() => pickKind('highpass')}
+          />
+        </View>
+      }>
       <Text style={styles.label}>Input (low + high sine)</Text>
       <WaveformPlot samples={analysis.mixed} height={90} />
       <Text style={styles.label}>
         Output · {family.toUpperCase()} {kind}
       </Text>
-      <WaveformPlot samples={analysis.filtered} height={90} strokeColor="#2E8B57" />
-      <DemoParamControls
-        params={demo.params}
-        values={values}
-        onBump={(id, delta, min, max) => {
-          setValues((prev) => bumpParam(prev, id, delta, min, max));
-          onInteracted?.();
-        }}
+      <WaveformPlot
+        samples={analysis.filtered}
+        height={90}
+        strokeColor={AvTheme.plotFiltered}
       />
-    </View>
+    </AvDemoShell>
   );
+}
+
+function mixTones(
+  lowHz: number,
+  highHz: number,
+  sampleRateHz: number,
+  sampleCount: number,
+): Float64Array {
+  const low = generateSineSamples({
+    frequencyHz: lowHz,
+    sampleRateHz,
+    amplitude: 0.55,
+    sampleCount,
+  });
+  const high = generateSineSamples({
+    frequencyHz: highHz,
+    sampleRateHz,
+    amplitude: 0.45,
+    sampleCount,
+  });
+  const mixed = new Float64Array(sampleCount);
+  for (let i = 0; i < sampleCount; i += 1) {
+    mixed[i] = (low[i] ?? 0) + (high[i] ?? 0);
+  }
+  return mixed;
 }
 
 function Chip({
@@ -115,17 +149,6 @@ function Chip({
 }
 
 const styles = StyleSheet.create({
-  wrap: {
-    gap: 12,
-    alignItems: 'center',
-    width: '100%',
-  },
-  caption: {
-    fontSize: 14,
-    opacity: 0.75,
-    alignSelf: 'stretch',
-    lineHeight: 20,
-  },
   toggleRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -135,20 +158,23 @@ const styles = StyleSheet.create({
   chip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: 'rgba(27, 108, 168, 0.12)',
+    borderColor: AvTheme.line,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
   },
   chipActive: {
-    backgroundColor: 'rgba(27, 108, 168, 0.32)',
+    borderColor: AvTheme.accent,
+    backgroundColor: 'rgba(223, 242, 90, 0.12)',
   },
   chipText: {
     fontWeight: '600',
     fontSize: 13,
+    color: AvTheme.ink,
   },
   label: {
-    fontSize: 13,
-    fontWeight: '600',
-    opacity: 0.7,
+    fontFamily: 'SpaceMono',
+    fontSize: 11,
+    color: AvTheme.muted,
     alignSelf: 'stretch',
   },
 });
