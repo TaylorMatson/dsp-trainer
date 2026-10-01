@@ -72,7 +72,8 @@ export function FilterVisualizer({ demo, onInteracted }: Props) {
       analysisSampleRateHz={ANALYSIS_FS}
       source={source}
       onInteracted={onInteracted}
-      hint="Play the mix, then flip FIR/IIR or LP/HP — heard output matches the green trace."
+      audioRefreshKey={`${family}-${kind}`}
+      hint="Play the mix, then flip FIR/IIR or LP/HP — audio rebuilds live (no Rewind needed). Heard output matches the green trace."
       extraControls={
         <View style={styles.toggleRow}>
           <Chip label="FIR" active={family === 'fir'} onPress={() => pickFamily('fir')} />

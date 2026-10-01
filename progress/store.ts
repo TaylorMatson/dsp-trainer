@@ -1,21 +1,26 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { normalizeProgressMap } from '@/progress/normalize';
 import {
   emptyModuleProgress,
   type ModuleProgress,
   type ProgressMap,
 } from '@/progress/types';
 
-const STORAGE_KEY = 'dsp-trainer.progress.v1';
+/** v2: strict boolean coerce + wipe v1 keys that could show unearned Module 6 checks. */
+const STORAGE_KEY = 'dsp-trainer.progress.v2';
+const LEGACY_STORAGE_KEY = 'dsp-trainer.progress.v1';
 
 export async function loadProgressMap(): Promise<ProgressMap> {
   const raw = await AsyncStorage.getItem(STORAGE_KEY);
   if (!raw) {
+    // Drop legacy blob so stale QA checkmarks cannot reappear as "defaults".
+    await AsyncStorage.removeItem(LEGACY_STORAGE_KEY);
     return {};
   }
   try {
-    const parsed = JSON.parse(raw) as ProgressMap;
-    return parsed && typeof parsed === 'object' ? parsed : {};
+    const parsed = JSON.parse(raw) as unknown;
+    return normalizeProgressMap(parsed);
   } catch {
     return {};
   }
@@ -26,7 +31,7 @@ export async function saveProgressMap(map: ProgressMap): Promise<void> {
 }
 
 export async function clearProgressMap(): Promise<void> {
-  await AsyncStorage.removeItem(STORAGE_KEY);
+  await AsyncStorage.multiRemove([STORAGE_KEY, LEGACY_STORAGE_KEY]);
 }
 
 export function getModuleProgress(map: ProgressMap, moduleId: string): ModuleProgress {

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { AvDemoShell, paramDefaults } from '@/components/AvDemoShell';
 import { WaveformPlot } from '@/components/WaveformPlot';
@@ -24,9 +24,10 @@ const BURST_LEN = 48;
 
 export function ConvolutionVisualizer({ demo, onInteracted }: Props) {
   const [values, setValues] = useState(() => paramDefaults(demo.params));
+  const [useEcho, setUseEcho] = useState(true);
   const delaySamples = Math.round(values.delaySamples ?? 8);
   const decay = values.decay ?? 0.5;
-  const useEcho = (values.useEcho ?? 1) >= 1;
+  const frequencyHz = values.frequencyHz ?? 8;
 
   const analysis = useMemo(() => {
     const { burst, kernel, output } = buildConvolution(
@@ -34,22 +35,28 @@ export function ConvolutionVisualizer({ demo, onInteracted }: Props) {
       decay,
       useEcho,
       BURST_LEN,
+      frequencyHz,
     );
     return { burst, kernel, output };
-  }, [delaySamples, decay, useEcho]);
+  }, [delaySamples, decay, useEcho, frequencyHz]);
 
   const source = useCallback(
     (ctx: AvRenderContext) => {
       const delay = Math.round(ctx.params.delaySamples ?? delaySamples);
       const dec = ctx.params.decay ?? decay;
-      const echo = (ctx.params.useEcho ?? (useEcho ? 1 : 0)) >= 1;
+      const f = ctx.params.frequencyHz ?? frequencyHz;
       // Longer burst for a hearable oneshot, same IR shape as the plot.
-      const { output } = buildConvolution(delay, dec, echo, 96);
+      const { output } = buildConvolution(delay, dec, useEcho, 96, f);
       const teachingRate = ANALYSIS_FS;
       return resampleLinear(output, teachingRate, ctx.outputSampleRateHz);
     },
-    [delaySamples, decay, useEcho],
+    [delaySamples, decay, useEcho, frequencyHz],
   );
+
+  const toggleEcho = () => {
+    setUseEcho((prev) => !prev);
+    onInteracted?.();
+  };
 
   return (
     <AvDemoShell
@@ -62,7 +69,20 @@ export function ConvolutionVisualizer({ demo, onInteracted }: Props) {
       analysisSampleRateHz={ANALYSIS_FS}
       source={source}
       onInteracted={onInteracted}
-      hint="Press Play for a burst through the IR. Toggle echo and hear the delayed tap.">
+      audioRefreshKey={useEcho ? 'echo' : 'impulse'}
+      hint="Press Play for a burst through the IR. Toggle Use echo and change frequency — audio rebuilds if you are in a play cycle."
+      extraControls={
+        <View style={styles.toggleRow}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: useEcho }}
+            onPress={toggleEcho}
+            style={[styles.chip, useEcho && styles.chipActive]}
+            testID="conv-use-echo">
+            <Text style={styles.chipText}>{useEcho ? 'Use echo: on' : 'Use echo: off'}</Text>
+          </Pressable>
+        </View>
+      }>
       <Text style={styles.label}>Input burst</Text>
       <WaveformPlot samples={analysis.burst} height={80} />
       <Text style={styles.label}>
@@ -88,9 +108,10 @@ function buildConvolution(
   decay: number,
   useEcho: boolean,
   burstLen: number,
+  frequencyHz: number,
 ): { burst: Float64Array; kernel: Float64Array; output: Float64Array } {
   const signal = generateSineSamples({
-    frequencyHz: 8,
+    frequencyHz,
     sampleRateHz: ANALYSIS_FS,
     amplitude: 0.9,
     sampleCount: burstLen,
@@ -108,6 +129,30 @@ function buildConvolution(
 }
 
 const styles = StyleSheet.create({
+  toggleRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignSelf: 'stretch',
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    minHeight: 44,
+    justifyContent: 'center',
+    borderColor: AvTheme.line,
+    borderWidth: 1,
+    backgroundColor: 'transparent',
+  },
+  chipActive: {
+    borderColor: AvTheme.accent,
+    backgroundColor: 'rgba(223, 242, 90, 0.12)',
+  },
+  chipText: {
+    fontWeight: '600',
+    fontSize: 14,
+    color: AvTheme.ink,
+  },
   label: {
     fontFamily: 'SpaceMono',
     fontSize: 11,

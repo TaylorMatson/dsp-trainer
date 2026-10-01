@@ -39,7 +39,7 @@ From **Home**, open any ready module and complete Lesson → Demo → Practice o
 5. FIR vs IIR Filters (LP/HP)
 6. Convolution Intro
 
-The Demo tab still hosts the sine smoke plot.
+The **Lab** tab hosts a thin coding-lab MVP (ordered signal-chain check for Module 1).
 
 ## Verify
 

@@ -44,7 +44,7 @@ export default function HomeScreen() {
       })}
 
       <Link href="/(tabs)/demo" style={styles.secondaryLink}>
-        Open sine smoke demo
+        Open coding lab
       </Link>
     </ScrollView>
   );

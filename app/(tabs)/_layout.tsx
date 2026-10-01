@@ -39,13 +39,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="demo"
         options={{
-          title: 'Demo',
+          title: 'Lab',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{
-                ios: 'waveform.path.ecg',
-                android: 'show_chart',
-                web: 'show_chart',
+                ios: 'hammer',
+                android: 'build',
+                web: 'build',
               }}
               tintColor={color}
               size={28}

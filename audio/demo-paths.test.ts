@@ -9,7 +9,7 @@ import {
   resampleLinear,
 } from '@/signal';
 
-describe('filter playground audible path', () => {
+describe('filter demo audible path', () => {
   it('maps teaching tones into an audible filtered mix with usable peak', () => {
     const analysisFs = 128;
     const low = 4;

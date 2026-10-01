@@ -6,6 +6,7 @@ import { Text, View } from '@/components/Themed';
 import { AvTheme } from '@/constants/AvTheme';
 import { getModuleById, getNextModule } from '@/content/modules';
 import { useProgress } from '@/progress/ProgressContext';
+import { practiceNavActions, practiceNavMode } from '@/progress/practiceNav';
 import { scorePractice } from '@/progress/types';
 
 export default function ModulePracticeScreen() {
@@ -40,6 +41,12 @@ export default function ModulePracticeScreen() {
   const allAnswered = answers.every((a) => a !== null);
   const displayScore = resultScore ?? liveScore;
   const displayPassed = resultScore !== null ? resultPassed : liveScore >= practice.passScore;
+  const nav = practiceNavActions(
+    practiceNavMode({
+      passed: displayPassed,
+      hasNextModule: Boolean(nextModule),
+    }),
+  );
 
   const submit = () => {
     const score = scorePractice(answers, correctIndexes);
@@ -81,13 +88,6 @@ export default function ModulePracticeScreen() {
             <Text style={styles.scoreBannerStatus}>
               {displayPassed ? 'Passed — nice work.' : 'Not yet — review and retry.'}
             </Text>
-            <PostCheckNav
-              moduleId={module.id}
-              nextModuleId={nextModule?.id}
-              nextModuleTitle={nextModule?.title}
-              showRetry={!displayPassed}
-              onRetry={retry}
-            />
           </View>
         ) : null}
 
@@ -154,7 +154,7 @@ export default function ModulePracticeScreen() {
               moduleId={module.id}
               nextModuleId={nextModule?.id}
               nextModuleTitle={nextModule?.title}
-              showRetry={!displayPassed}
+              actions={nav}
               onRetry={retry}
             />
           </View>
@@ -168,18 +168,18 @@ function PostCheckNav({
   moduleId,
   nextModuleId,
   nextModuleTitle,
-  showRetry,
+  actions,
   onRetry,
 }: {
   moduleId: string;
   nextModuleId?: string;
   nextModuleTitle?: string;
-  showRetry: boolean;
+  actions: ReturnType<typeof practiceNavActions>;
   onRetry: () => void;
 }) {
   return (
-    <View style={styles.navRow}>
-      {showRetry ? (
+    <View style={styles.navRow} testID="practice-bottom-nav">
+      {actions.showRetry ? (
         <Pressable
           accessibilityRole="button"
           style={styles.secondary}
@@ -188,7 +188,15 @@ function PostCheckNav({
           <Text style={styles.secondaryText}>Retry</Text>
         </Pressable>
       ) : null}
-      {nextModuleId ? (
+      {actions.showBackToReading ? (
+        <Link
+          href={`/module/${moduleId}/lesson` as Href}
+          style={styles.navPrimary}
+          testID="practice-back-reading">
+          <Text style={styles.navPrimaryText}>Back to reading</Text>
+        </Link>
+      ) : null}
+      {actions.showNextModule && nextModuleId ? (
         <Link
           href={`/module/${nextModuleId}` as Href}
           style={styles.navPrimary}
@@ -197,14 +205,12 @@ function PostCheckNav({
             Next module{nextModuleTitle ? `: ${nextModuleTitle}` : ''}
           </Text>
         </Link>
-      ) : (
-        <Link href={`/module/${moduleId}` as Href} style={styles.navPrimary} testID="practice-back-module">
-          <Text style={styles.navPrimaryText}>Back to module ✓</Text>
+      ) : null}
+      {actions.showBackToMenu ? (
+        <Link href={'/' as Href} style={styles.link} testID="practice-back-menu">
+          {actions.showBackToReading ? 'Return to menu' : 'Back to menu'}
         </Link>
-      )}
-      <Link href={'/' as Href} style={styles.link} testID="practice-back-menu">
-        Back to menu
-      </Link>
+      ) : null}
     </View>
   );
 }
@@ -315,6 +321,10 @@ const styles = StyleSheet.create({
   },
   result: {
     gap: 10,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopColor: AvTheme.line,
+    borderTopWidth: 1,
   },
   resultTitle: {
     fontSize: 17,

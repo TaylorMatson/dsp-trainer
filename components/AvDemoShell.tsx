@@ -2,6 +2,7 @@ import Slider from '@react-native-community/slider';
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { subscribeDemoAudioStop } from '@/audio/demoAudioBus';
 import { getMasterVolume, setMasterVolume } from '@/audio/masterVolume';
 import { AvPlaybackController } from '@/audio/playback';
 import type { AvAudioMode, AvSampleSource } from '@/audio/types';
@@ -26,6 +27,11 @@ export type AvDemoShellProps = {
   allowMute?: boolean;
   /** Short “try changing…” caption under transport. */
   hint?: string;
+  /**
+   * Bump when non-slider state (filter kind, echo toggle, etc.) changes so
+   * playing audio rebuilds without requiring Rewind.
+   */
+  audioRefreshKey?: string | number;
 };
 
 export function AvDemoShell({
@@ -42,6 +48,7 @@ export function AvDemoShell({
   onInteracted,
   allowMute = true,
   hint = 'Press Play, then change a parameter — listen and watch together.',
+  audioRefreshKey = 0,
 }: AvDemoShellProps) {
   const [transport, setTransport] = useState<'stopped' | 'playing' | 'paused'>('stopped');
   const [muted, setMuted] = useState(false);
@@ -86,6 +93,13 @@ export function AvDemoShell({
   }, [audioMode]);
 
   useEffect(() => {
+    return subscribeDemoAudioStop(() => {
+      setTransport('stopped');
+      setMuted(false);
+    });
+  }, []);
+
+  useEffect(() => {
     controllerRef.current?.setMuted(muted);
   }, [muted]);
 
@@ -114,14 +128,14 @@ export function AvDemoShell({
     };
   }, [analysisSampleRateHz]);
 
-  // Other param changes: refresh the loop buffer while playing.
+  // Param / refresh-key changes: refresh the buffer while playing (live update).
   useEffect(() => {
     if (transport !== 'playing') return;
     const handle = setTimeout(() => {
       void controllerRef.current?.refreshIfPlaying();
     }, 80);
     return () => clearTimeout(handle);
-  }, [transport, values]);
+  }, [transport, values, audioRefreshKey]);
 
   const mark = useCallback(() => {
     onInteracted?.();
@@ -194,6 +208,11 @@ export function AvDemoShell({
 
       <Text style={styles.summary}>{summary}</Text>
 
+      <View style={styles.instruction} testID="demo-instructions">
+        <Text style={styles.instructionKicker}>TRY THIS</Text>
+        <Text style={styles.instructionText}>{hint}</Text>
+      </View>
+
       <View style={styles.canvas}>{children}</View>
 
       <View style={styles.actions}>
@@ -239,8 +258,6 @@ export function AvDemoShell({
           </Pressable>
         ) : null}
       </View>
-
-      <Text style={styles.hint}>{hint}</Text>
 
       <View style={styles.sliders}>
         {params.map((param) => {
@@ -335,6 +352,29 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: AvTheme.muted,
   },
+  instruction: {
+    gap: 6,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    backgroundColor: AvTheme.canvas,
+    borderLeftColor: AvTheme.accent,
+    borderLeftWidth: 3,
+    borderColor: AvTheme.line,
+    borderWidth: 1,
+  },
+  instructionKicker: {
+    fontFamily: 'SpaceMono',
+    fontSize: 11,
+    letterSpacing: 1.4,
+    color: AvTheme.accent,
+    fontWeight: '700',
+  },
+  instructionText: {
+    fontSize: 15,
+    lineHeight: 21,
+    fontWeight: '600',
+    color: AvTheme.ink,
+  },
   canvas: {
     backgroundColor: AvTheme.canvas,
     borderColor: AvTheme.lampOff,
@@ -374,12 +414,6 @@ const styles = StyleSheet.create({
   actionGhostText: {
     color: AvTheme.ink,
     fontSize: 14,
-  },
-  hint: {
-    fontFamily: 'SpaceMono',
-    fontSize: 12,
-    lineHeight: 17,
-    color: AvTheme.teal,
   },
   sliders: {
     gap: 10,

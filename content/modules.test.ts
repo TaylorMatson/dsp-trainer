@@ -88,6 +88,55 @@ describe('curriculum pack content', () => {
     expect(fs.defaultValue).toBeGreaterThanOrEqual(2048);
   });
 
+  it('renames filter module UI away from playground', () => {
+    const module = getModuleById('fir-iir-filters')!;
+    const blob = [
+      module.title,
+      module.summary,
+      ...module.lessons.flatMap((l) => l.blocks.map((b) => b.text)),
+      ...module.demos.map((d) => `${d.title} ${d.summary}`),
+    ].join(' ');
+    expect(blob.toLowerCase()).not.toMatch(/playground/);
+    expect(module.demos[0]!.title.toLowerCase()).toMatch(/demo/);
+  });
+
+  it('spectrum demo defaults to a non-integer cycle count (leakage visible)', () => {
+    const demo = getModuleById('frequency-domain')!.demos[0]!;
+    const f = demo.params.find((p) => p.id === 'frequencyHz')!.defaultValue;
+    const fs = demo.params.find((p) => p.id === 'sampleRateHz')!.defaultValue;
+    const n = 128;
+    const cycles = (f * n) / fs;
+    expect(Math.abs(cycles - Math.round(cycles))).toBeGreaterThan(0.2);
+  });
+
+  it('convolution demo exposes frequency slider and no useEcho param slider', () => {
+    const demo = getModuleById('convolution-intro')!.demos[0]!;
+    expect(demo.params.some((p) => p.id === 'frequencyHz')).toBe(true);
+    expect(demo.params.some((p) => p.id === 'useEcho')).toBe(false);
+  });
+
+  it('puts plain-English lead-ins before equation callouts', () => {
+    for (const module of MODULES) {
+      for (const lesson of module.lessons) {
+        for (let i = 0; i < lesson.blocks.length; i += 1) {
+          const block = lesson.blocks[i]!;
+          if (block.type !== 'callout') continue;
+          if (!/[·×/=]|sin\(|y\[n\]|fN|fs\s*\/\s*N|Σ/.test(block.text)) continue;
+          const prev = lesson.blocks[i - 1];
+          expect(prev?.type, `${module.id} callout needs lead-in`).toBe('paragraph');
+          expect(prev && 'text' in prev ? prev.text.length : 0).toBeGreaterThan(40);
+        }
+      }
+    }
+  });
+
+  it('keeps spectrum-check equation question that points back to reading', () => {
+    const practice = getModuleById('frequency-domain')!.practice!;
+    const bin = practice.challenges.find((c) => c.id === 'bin-freq')!;
+    expect(bin.prompt).toMatch(/fs\s*=/);
+    expect(bin.explanation.toLowerCase()).toMatch(/formula|lesson|peek/);
+  });
+
   it('resolves next module in curriculum order', () => {
     expect(getNextModule('sampling-aliasing')?.id).toBe('discrete-sine');
     expect(getNextModule('convolution-intro')).toBeUndefined();

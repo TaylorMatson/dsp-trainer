@@ -1,15 +1,20 @@
+/**
+ * Thin transport over expo-audio: synthesizes WAV from the demo sample source
+ * and plays/loops it. DSP math stays in `signal/`; this only clocks and plays.
+ */
 import {
   createAudioPlayer,
   setAudioModeAsync,
   type AudioPlayer,
 } from 'expo-audio';
 
+import { registerDemoAudio } from '@/audio/demoAudioBus';
+import { getMasterVolume, subscribeMasterVolume } from '@/audio/masterVolume';
+import type { AvAudioMode, AvRenderContext, AvSampleSource } from '@/audio/types';
 import {
   CONTINUOUS_BUFFER_SECONDS,
   DEFAULT_OUTPUT_SAMPLE_RATE_HZ,
 } from '@/constants/AvTheme';
-import { getMasterVolume, subscribeMasterVolume } from '@/audio/masterVolume';
-import type { AvAudioMode, AvRenderContext, AvSampleSource } from '@/audio/types';
 import { encodeWavDataUri, fadeEdges } from '@/signal/pcm';
 
 export type AvPlaybackOptions = {
@@ -21,10 +26,6 @@ export type AvPlaybackOptions = {
   getParams: () => Record<string, number>;
 };
 
-/**
- * Thin transport over expo-audio: synthesizes WAV from the demo sample source
- * and plays/loops it. DSP math stays in `signal/`; this only clocks and plays.
- */
 export class AvPlaybackController {
   readonly outputSampleRateHz: number;
   private player: AudioPlayer | null = null;
@@ -35,6 +36,7 @@ export class AvPlaybackController {
   private playing = false;
   private muted = false;
   private unsubscribeVolume: (() => void) | null = null;
+  private unregisterBus: (() => void) | null = null;
 
   constructor(private readonly options: AvPlaybackOptions) {
     this.outputSampleRateHz =
@@ -42,6 +44,7 @@ export class AvPlaybackController {
     this.unsubscribeVolume = subscribeMasterVolume(() => {
       this.applyVolume();
     });
+    this.unregisterBus = registerDemoAudio(this);
   }
 
   get isPlaying(): boolean {
@@ -85,6 +88,21 @@ export class AvPlaybackController {
     this.playing = false;
   }
 
+  /** Hard stop used when leaving the demo (Continue to practice). */
+  stop(): void {
+    this.pause();
+    this.pausedAccumSec = 0;
+    this.frameCount = 0;
+    this.startedAtMs = null;
+    if (this.player) {
+      try {
+        this.player.seekTo(0);
+      } catch {
+        // ignore
+      }
+    }
+  }
+
   async rewind(): Promise<void> {
     this.pausedAccumSec = 0;
     this.frameCount = 0;
@@ -124,6 +142,10 @@ export class AvPlaybackController {
   release(): void {
     this.playing = false;
     this.startedAtMs = null;
+    if (this.unregisterBus) {
+      this.unregisterBus();
+      this.unregisterBus = null;
+    }
     if (this.unsubscribeVolume) {
       this.unsubscribeVolume();
       this.unsubscribeVolume = null;

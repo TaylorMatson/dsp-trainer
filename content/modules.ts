@@ -27,6 +27,10 @@ export const MODULES: ModuleContent[] = [
             text: 'Sample rate fs (hertz) is how many snapshots we take per second. Compact discs use 44,100 Hz; many DAWs use 48,000 Hz. The time between samples is Ts = 1/fs seconds. Double fs and you pack twice as many points into each second of sound.',
           },
           {
+            type: 'paragraph',
+            text: 'In plain English: the Nyquist frequency is simply half the sample rate — the fastest oscillation those snapshots can still tell apart.',
+          },
+          {
             type: 'callout',
             text: 'Nyquist frequency fN = fs / 2. It is the highest frequency you can represent without aliasing at that sample rate. Example: at fs = 1,000 Hz, fN = 500 Hz.',
           },
@@ -126,6 +130,10 @@ export const MODULES: ModuleContent[] = [
           {
             type: 'paragraph',
             text: 'A discrete signal is a list of numbers x[n] — one amplitude per sample index n = 0, 1, 2, …. Real time between samples is Ts = 1/fs seconds, so sample n happens at t = n/fs. Metaphor: x[n] is a flip-book; fs is how fast you flip the pages.',
+          },
+          {
+            type: 'paragraph',
+            text: 'In plain English: each sample is amplitude × sin (or cos) of (frequency × time-index / sample-rate), then plus or minus a phase offset that slides the wave.',
           },
           {
             type: 'callout',
@@ -250,15 +258,15 @@ export const MODULES: ModuleContent[] = [
           },
           {
             type: 'paragraph',
-            text: 'A Fast Fourier Transform (FFT) turns a block of N samples into frequency bins. Bin k corresponds to frequency f_k ≈ k · fs / N. The spacing between bins — the resolution — is Δf = fs / N. Raise fs with N fixed and bins get wider; each bar covers more hertz.',
+            text: 'A Fast Fourier Transform (FFT) turns a block of N samples into frequency bins. In plain English: each bin’s frequency is (bin index × sample rate) ÷ FFT length, and the gap between bins is sample rate ÷ length.',
           },
           {
             type: 'callout',
-            text: 'Bin frequency ≈ k · fs / N. Example: fs = 128 Hz, N = 128 → Δf = 1 Hz, so bin 16 ≈ 16 Hz.',
+            text: 'Bin frequency ≈ k · fs / N. Example: fs = 256 Hz, N = 128 → Δf = 2 Hz, so bin 8 ≈ 16 Hz.',
           },
           {
             type: 'paragraph',
-            text: 'Why neighboring peaks come and go when you change sample rate: a pure sine only lands exactly on one bin when it completes an integer number of cycles in the FFT frame. Otherwise energy leaks into neighbors (spectral leakage). Changing fs also changes Δf, so the same tone sits differently relative to bin centers — side lobes appear, shrink, or hop. Those are measurement artifacts, not new musical notes.',
+            text: 'Why neighboring peaks appear: a pure sine only lands exactly on one bin when it completes an integer number of cycles in the FFT frame. Otherwise energy leaks into neighbors (spectral leakage). If Δf ≈ 1 Hz and the tone sits on an integer Hz, the plot looks “clean” even though leakage is the lesson — the demo defaults to a non-integer cycle count so you can see side energy, then slide onto an integer count to watch it collapse.',
           },
           {
             type: 'paragraph',
@@ -272,7 +280,7 @@ export const MODULES: ModuleContent[] = [
         id: 'spectrum-demo',
         title: 'Time and spectrum',
         summary:
-          'Change tone and sample rate — watch the waveform and magnitude peak. Neighboring bins rise/fall from leakage and bin width Δf = fs/N.',
+          'Defaults land off-bin so leakage is visible (≈8.75 cycles/frame). Slide onto an integer cycle count to collapse neighbors; change fs to move Δf = fs/N.',
         componentId: 'spectrum-visualizer',
         audio: { mode: 'continuous' },
         params: [
@@ -281,17 +289,17 @@ export const MODULES: ModuleContent[] = [
             label: 'Tone frequency',
             min: 4,
             max: 40,
-            step: 2,
-            defaultValue: 16,
+            step: 0.5,
+            defaultValue: 17.5,
             unit: 'Hz',
           },
           {
             id: 'sampleRateHz',
             label: 'Sample rate',
-            min: 64,
-            max: 256,
+            min: 128,
+            max: 512,
             step: 64,
-            defaultValue: 128,
+            defaultValue: 256,
             unit: 'Hz',
           },
         ],
@@ -317,11 +325,11 @@ export const MODULES: ModuleContent[] = [
         },
         {
           id: 'bin-freq',
-          prompt: 'With fs = 128 Hz and N = 128, what frequency is bin k = 16?',
+          prompt: 'With fs = 256 Hz and N = 128, what frequency is bin k = 8?',
           kind: 'multipleChoice',
           choices: ['1 Hz', '8 Hz', '16 Hz', '32 Hz'],
           correctIndex: 2,
-          explanation: 'f = k · fs / N = 16 · 128 / 128 = 16 Hz.',
+          explanation: 'f = k · fs / N = 8 · 256 / 128 = 16 Hz. Same formula as the lesson — peek back if needed.',
         },
         {
           id: 'read-peak',
@@ -358,7 +366,11 @@ export const MODULES: ModuleContent[] = [
           },
           {
             type: 'paragraph',
-            text: 'Cycles in the frame ≈ f · N / fs. Example with N = 256 and fs = 4,096 Hz: f = 448 Hz → exactly 28 cycles (clean peak). f = 437.5 Hz → 27.34 cycles (leakage). A window multiplies the buffer by a taper that goes to zero at the ends before the FFT, softening that discontinuity.',
+            text: 'Cycles in the frame ≈ frequency × FFT length ÷ sample rate. Example with N = 256 and fs = 4,096 Hz: f = 448 Hz → exactly 28 cycles (clean peak). f = 437.5 Hz → 27.34 cycles (leakage). A window multiplies the buffer by a taper that goes to zero at the ends before the FFT, softening that discontinuity.',
+          },
+          {
+            type: 'paragraph',
+            text: 'In plain English: Rectangular means “no taper” (raw edges leak). Hann gently fades the ends so side lobes quiet down, at the cost of a slightly wider main peak.',
           },
           {
             type: 'callout',
@@ -467,11 +479,11 @@ export const MODULES: ModuleContent[] = [
           },
           {
             type: 'paragraph',
-            text: 'FIR (finite impulse response) filters are weighted sums of recent input samples only: y[n] = b0 x[n] + b1 x[n−1] + … + bM x[n−M]. Hit them with a single click (impulse) and the output dies after M+1 samples — finite memory. A moving-average lowpass is the classic teaching FIR: more taps → smoother, slower output (stronger lowpass). A first-difference highpass y[n] = x[n] − x[n−1] emphasizes sample-to-sample jumps — high “speed” in the signal.',
+            text: 'FIR (finite impulse response) filters are weighted sums of recent input samples only. In plain English: each output is a mix of the newest few inputs — no memory of past outputs. Written: y[n] = b0 x[n] + b1 x[n−1] + … + bM x[n−M]. Hit them with a single click (impulse) and the output dies after M+1 samples — finite memory. A moving-average lowpass is the classic teaching FIR: more taps → smoother, slower output (stronger lowpass). A first-difference highpass y[n] = x[n] − x[n−1] emphasizes sample-to-sample jumps — high “speed” in the signal.',
           },
           {
             type: 'paragraph',
-            text: 'IIR (infinite impulse response) filters also feed past outputs back in: y[n] = … + a1 y[n−1] + …. Feedback creates a long ringing memory from few coefficients — theoretically infinite impulse response. A one-pole smoother y[n] = y[n−1] + α (x[n] − y[n−1]) is the teaching IIR lowpass: small α → sluggish follow (stronger lowpass); α near 1 → tracks quickly. Highpass is often “input minus that smoother.”',
+            text: 'IIR (infinite impulse response) filters also feed past outputs back in. In plain English: today’s output remembers yesterday’s output, so a short recipe can ring for a long time. Written: y[n] = … + a1 y[n−1] + …. A one-pole smoother y[n] = y[n−1] + α (x[n] − y[n−1]) is the teaching IIR lowpass: small α → sluggish follow (stronger lowpass); α near 1 → tracks quickly. Highpass is often “input minus that smoother.”',
           },
           {
             type: 'callout',
@@ -479,7 +491,7 @@ export const MODULES: ModuleContent[] = [
           },
           {
             type: 'paragraph',
-            text: 'In the playground, mix a slow teaching tone with a fast one, then toggle FIR/IIR and LP/HP. Visually, lowpass should calm the trace toward the slow wave; highpass should leave the rapid ripple. Audio follows the same filter after mapping teaching frequencies into the audible range so you can actually hear the contrast.',
+            text: 'In the demo, mix a slow teaching tone with a fast one, then toggle FIR/IIR and LP/HP. Visually, lowpass should calm the trace toward the slow wave; highpass should leave the rapid ripple. Audio follows the same filter after mapping teaching frequencies into the audible range so you can actually hear the contrast — slider and chip changes rebuild playback live.',
           },
         ],
       },
@@ -487,9 +499,9 @@ export const MODULES: ModuleContent[] = [
     demos: [
       {
         id: 'filter-demo',
-        title: 'LP / HP playground',
+        title: 'LP / HP demo',
         summary:
-          'Mix a low and high sine, then toggle FIR/IIR and lowpass/highpass — hear and see what survives.',
+          'Mix a low and high sine, then toggle FIR/IIR and lowpass/highpass — hear and see what survives. Changes apply while playing.',
         componentId: 'filter-visualizer',
         audio: { mode: 'continuous' },
         params: [
@@ -588,7 +600,11 @@ export const MODULES: ModuleContent[] = [
           },
           {
             type: 'paragraph',
-            text: 'Discrete convolution mixes the IR across the input: y[n] = Σ_k x[k] · h[n − k] (sum over overlapping taps). For each output time n, you flip and slide h across x, multiply overlaps, and add. That is exactly what FIR filtering is — the b coefficients are h[n]. Linear time-invariant filters are completely described by their IR.',
+            text: 'Discrete convolution mixes the IR across the input. In plain English: for each output time, flip and slide the impulse response across the input, multiply overlaps, and add them up. Written: y[n] = Σ_k x[k] · h[n − k]. That is exactly what FIR filtering is — the b coefficients are h[n]. Linear time-invariant filters are completely described by their IR.',
+          },
+          {
+            type: 'paragraph',
+            text: 'In plain English: a unit impulse IR (just [1]) leaves the signal alone; an echo IR keeps a full-strength click at delay 0 and adds a quieter tap later so you hear a delayed copy.',
           },
           {
             type: 'callout',
@@ -596,7 +612,7 @@ export const MODULES: ModuleContent[] = [
           },
           {
             type: 'paragraph',
-            text: 'Static walk-through: burst x = [1, 0.5, 0], echo h = [1, 0, 0, 0.4]. Convolution yields a copy of the burst starting at n = 0 and another starting at n = 3 scaled by 0.4. In the demo, toggle impulse vs echo, stretch delay, and hear the second tap move — the plots show the same IR you are hearing.',
+            text: 'Static walk-through: burst x = [1, 0.5, 0], echo h = [1, 0, 0, 0.4]. Convolution yields a copy of the burst starting at n = 0 and another starting at n = 3 scaled by 0.4. In the demo, tap Use echo, stretch delay, change burst frequency, and hear the second tap move — the plots show the same IR you are hearing.',
           },
           {
             type: 'paragraph',
@@ -610,17 +626,18 @@ export const MODULES: ModuleContent[] = [
         id: 'conv-demo',
         title: 'Echo by convolution',
         summary:
-          'Play a short burst through a unit impulse or echo kernel — hear the delayed tap and compare plots.',
+          'Play a short burst through a unit impulse or echo kernel — hear the delayed tap and compare plots. Use echo is a button; frequency is a slider.',
         componentId: 'convolution-visualizer',
         audio: { mode: 'oneshot' },
         params: [
           {
-            id: 'useEcho',
-            label: 'Use echo (0=impulse, 1=echo)',
-            min: 0,
-            max: 1,
+            id: 'frequencyHz',
+            label: 'Burst frequency',
+            min: 4,
+            max: 16,
             step: 1,
-            defaultValue: 1,
+            defaultValue: 8,
+            unit: 'Hz',
           },
           {
             id: 'delaySamples',
