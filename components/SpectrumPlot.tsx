@@ -1,6 +1,6 @@
+import { View } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
 
-import { View } from '@/components/Themed';
 import { AvTheme } from '@/constants/AvTheme';
 
 type SpectrumPlotProps = {
