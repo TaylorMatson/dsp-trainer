@@ -20,8 +20,8 @@ export default function LabScreen() {
       <Text style={styles.kicker}>LAB</Text>
       <Text style={styles.title}>Coding lab</Text>
       <Text style={styles.caption}>
-        Build the demo’s signal chain in order. App checks your graph — a thin
-        slice toward per-module coding challenges.
+        Build the demo’s signal chain in order — an audible tone, then resample,
+        then play. App checks your graph; full code-judge later.
       </Text>
       <SignalChainChallenge challenge={challenge} />
     </ScrollView>

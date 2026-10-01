@@ -26,9 +26,9 @@ export const CODING_CHALLENGES: CodingChallenge[] = [
     moduleId: 'sampling-aliasing',
     title: 'Build the aliasing demo chain',
     prompt:
-      'Tap nodes in the order the Sampling & Aliasing demo builds audible output. Order matters.',
+      'Tap nodes in the order the Sampling & Aliasing demo builds audible output. Order matters — start with the tone you will hear.',
     pool: [
-      { id: 'tone', label: 'Generate teaching-rate sine' },
+      { id: 'tone', label: 'Generate audible tone sine wave' },
       { id: 'resample', label: 'Resample to device rate' },
       { id: 'play', label: 'Play continuous buffer' },
       { id: 'fft', label: 'Run FFT magnitude' },
@@ -36,8 +36,8 @@ export const CODING_CHALLENGES: CodingChallenge[] = [
     ],
     expectedOrder: ['tone', 'resample', 'play'],
     successExplanation:
-      'Correct: synthesize at teaching fs, upsample for the device, then loop playback. FFT/window belong to later spectrum modules.',
-    failHint: 'Think about what must exist before you can hear the aliased pitch.',
+      'Correct: synthesize an audible-pitch sine at the teaching sample rate, resample that buffer to the device rate, then loop playback. FFT/window belong to later spectrum modules.',
+    failHint: 'Think about what must exist before you can hear the (possibly aliased) audible tone.',
   },
 ];
 

@@ -8,9 +8,9 @@ import { AvTheme } from '@/constants/AvTheme';
 import type { Demo } from '@/content/schema';
 import {
   applyTeachingFilter,
-  audibleFrequencyHz,
   generateSineSamples,
   normalizePeak,
+  resampleLinear,
   type FilterFamily,
   type FilterKind,
 } from '@/signal';
@@ -20,15 +20,16 @@ type Props = {
   onInteracted?: () => void;
 };
 
-const ANALYSIS_FS = 128;
-const ANALYSIS_COUNT = 128;
+/** Mid-audio teaching rate so labeled Hz == heard pitch after resample. */
+const ANALYSIS_FS = 8000;
+const ANALYSIS_COUNT = 256;
 
 export function FilterVisualizer({ demo, onInteracted }: Props) {
   const [values, setValues] = useState(() => paramDefaults(demo.params));
   const [family, setFamily] = useState<FilterFamily>('fir');
   const [kind, setKind] = useState<FilterKind>('lowpass');
-  const lowHz = values.lowHz ?? 4;
-  const highHz = values.highHz ?? 32;
+  const lowHz = values.lowHz ?? 220;
+  const highHz = values.highHz ?? 2000;
   const strength = values.strength ?? (family === 'fir' ? 5 : 0.15);
 
   const analysis = useMemo(() => {
@@ -42,12 +43,17 @@ export function FilterVisualizer({ demo, onInteracted }: Props) {
       const low = ctx.params.lowHz ?? lowHz;
       const high = ctx.params.highHz ?? highHz;
       const str = ctx.params.strength ?? strength;
-      // Map teaching tones onto the device rate so LP/HP output is audible.
-      const playLow = audibleFrequencyHz(low, ANALYSIS_FS, ctx.outputSampleRateHz);
-      const playHigh = audibleFrequencyHz(high, ANALYSIS_FS, ctx.outputSampleRateHz);
-      const mixed = mixTones(playLow, playHigh, ctx.outputSampleRateHz, ctx.frameCount);
+      // Filter at teaching fs with the labeled Hz, then resample — pitch matches UI.
+      const teachingCount = Math.max(
+        64,
+        Math.round(ANALYSIS_FS * (ctx.frameCount / ctx.outputSampleRateHz)),
+      );
+      const mixed = mixTones(low, high, ANALYSIS_FS, teachingCount);
       const filtered = applyTeachingFilter(mixed, family, kind, str);
-      return normalizePeak(filtered, 0.55);
+      return normalizePeak(
+        resampleLinear(filtered, ANALYSIS_FS, ctx.outputSampleRateHz),
+        0.55,
+      );
     },
     [lowHz, highHz, strength, family, kind],
   );
@@ -73,7 +79,7 @@ export function FilterVisualizer({ demo, onInteracted }: Props) {
       source={source}
       onInteracted={onInteracted}
       audioRefreshKey={`${family}-${kind}`}
-      hint="Play the mix, then flip FIR/IIR or LP/HP — audio rebuilds live (no Rewind needed). Heard output matches the green trace."
+      hint="Play the mix, then flip FIR/IIR or LP/HP — audio rebuilds live (no Rewind needed). Slider Hz is the pitch you hear."
       extraControls={
         <View style={styles.toggleRow}>
           <Chip label="FIR" active={family === 'fir'} onPress={() => pickFamily('fir')} />
@@ -90,7 +96,9 @@ export function FilterVisualizer({ demo, onInteracted }: Props) {
           />
         </View>
       }>
-      <Text style={styles.label}>Input (low + high sine)</Text>
+      <Text style={styles.label}>
+        Input (low {lowHz.toFixed(0)} Hz + high {highHz.toFixed(0)} Hz)
+      </Text>
       <WaveformPlot samples={analysis.mixed} height={90} />
       <Text style={styles.label}>
         Output · {family.toUpperCase()} {kind}

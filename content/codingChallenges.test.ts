@@ -18,4 +18,10 @@ describe('codingChallenges', () => {
     expect(checkSignalChainOrder(expected, ['tone', 'play', 'resample'])).toBe(false);
     expect(checkSignalChainOrder(expected, ['tone', 'resample'])).toBe(false);
   });
+
+  it('names the tone step as an audible sine wave', () => {
+    const tone = CODING_CHALLENGES[0]!.pool.find((node) => node.id === 'tone');
+    expect(tone?.label.toLowerCase()).toMatch(/audible tone sine/);
+    expect(tone?.label.toLowerCase()).not.toMatch(/teaching-rate/);
+  });
 });

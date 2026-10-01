@@ -113,6 +113,17 @@ describe('curriculum pack content', () => {
     const demo = getModuleById('convolution-intro')!.demos[0]!;
     expect(demo.params.some((p) => p.id === 'frequencyHz')).toBe(true);
     expect(demo.params.some((p) => p.id === 'useEcho')).toBe(false);
+    const f = demo.params.find((p) => p.id === 'frequencyHz')!;
+    expect(f.defaultValue).toBeGreaterThanOrEqual(200);
+  });
+
+  it('filter demo uses audible tone defaults that match playback pitch', () => {
+    const demo = getModuleById('fir-iir-filters')!.demos[0]!;
+    const low = demo.params.find((p) => p.id === 'lowHz')!;
+    const high = demo.params.find((p) => p.id === 'highHz')!;
+    expect(low.defaultValue).toBeGreaterThanOrEqual(100);
+    expect(high.defaultValue).toBeGreaterThanOrEqual(800);
+    expect(high.defaultValue).toBeGreaterThan(low.defaultValue);
   });
 
   it('puts plain-English lead-ins before equation callouts', () => {

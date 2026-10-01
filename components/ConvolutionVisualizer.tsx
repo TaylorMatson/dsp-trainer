@@ -19,22 +19,25 @@ type Props = {
   onInteracted?: () => void;
 };
 
-const ANALYSIS_FS = 64;
-const BURST_LEN = 48;
+/** Mid-audio teaching rate: labeled burst Hz survives resample as heard pitch. */
+const ANALYSIS_FS = 4000;
+const PLOT_BURST_LEN = 80;
+/** Playback burst long enough for a clear audible tone + echo spacing. */
+const PLAY_BURST_LEN = 320;
 
 export function ConvolutionVisualizer({ demo, onInteracted }: Props) {
   const [values, setValues] = useState(() => paramDefaults(demo.params));
   const [useEcho, setUseEcho] = useState(true);
-  const delaySamples = Math.round(values.delaySamples ?? 8);
+  const delaySamples = Math.round(values.delaySamples ?? 400);
   const decay = values.decay ?? 0.5;
-  const frequencyHz = values.frequencyHz ?? 8;
+  const frequencyHz = values.frequencyHz ?? 400;
 
   const analysis = useMemo(() => {
     const { burst, kernel, output } = buildConvolution(
       delaySamples,
       decay,
       useEcho,
-      BURST_LEN,
+      PLOT_BURST_LEN,
       frequencyHz,
     );
     return { burst, kernel, output };
@@ -45,10 +48,8 @@ export function ConvolutionVisualizer({ demo, onInteracted }: Props) {
       const delay = Math.round(ctx.params.delaySamples ?? delaySamples);
       const dec = ctx.params.decay ?? decay;
       const f = ctx.params.frequencyHz ?? frequencyHz;
-      // Longer burst for a hearable oneshot, same IR shape as the plot.
-      const { output } = buildConvolution(delay, dec, useEcho, 96, f);
-      const teachingRate = ANALYSIS_FS;
-      return resampleLinear(output, teachingRate, ctx.outputSampleRateHz);
+      const { output } = buildConvolution(delay, dec, useEcho, PLAY_BURST_LEN, f);
+      return resampleLinear(output, ANALYSIS_FS, ctx.outputSampleRateHz);
     },
     [delaySamples, decay, useEcho, frequencyHz],
   );
@@ -57,6 +58,8 @@ export function ConvolutionVisualizer({ demo, onInteracted }: Props) {
     setUseEcho((prev) => !prev);
     onInteracted?.();
   };
+
+  const delayMs = (delaySamples / ANALYSIS_FS) * 1000;
 
   return (
     <AvDemoShell
@@ -70,7 +73,7 @@ export function ConvolutionVisualizer({ demo, onInteracted }: Props) {
       source={source}
       onInteracted={onInteracted}
       audioRefreshKey={useEcho ? 'echo' : 'impulse'}
-      hint="Press Play for a burst through the IR. Toggle Use echo and change frequency — audio rebuilds if you are in a play cycle."
+      hint="Press Play for an audible burst through the IR. Toggle Use echo and change frequency — audio rebuilds if you are in a play cycle."
       extraControls={
         <View style={styles.toggleRow}>
           <Pressable
@@ -83,10 +86,14 @@ export function ConvolutionVisualizer({ demo, onInteracted }: Props) {
           </Pressable>
         </View>
       }>
-      <Text style={styles.label}>Input burst</Text>
+      <Text style={styles.label}>Input burst · {frequencyHz.toFixed(0)} Hz</Text>
       <WaveformPlot samples={analysis.burst} height={80} />
       <Text style={styles.label}>
-        Impulse response ({useEcho ? `echo @ ${delaySamples}` : 'unit impulse'})
+        Impulse response (
+        {useEcho
+          ? `echo @ ${delaySamples} samples (~${delayMs.toFixed(0)} ms)`
+          : 'unit impulse'}
+        )
       </Text>
       <WaveformPlot
         samples={analysis.kernel}
@@ -117,7 +124,8 @@ function buildConvolution(
     sampleCount: burstLen,
   });
   const burst = new Float64Array(burstLen);
-  const live = Math.max(4, Math.floor(burstLen / 4));
+  // Keep most of the buffer as live tone so the pitch is unmistakable.
+  const live = Math.max(8, Math.floor((burstLen * 3) / 4));
   for (let i = 0; i < live; i += 1) {
     burst[i] = signal[i] ?? 0;
   }
