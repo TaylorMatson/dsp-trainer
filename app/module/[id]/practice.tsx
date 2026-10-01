@@ -1,16 +1,19 @@
-import { Link, Stack, useLocalSearchParams } from 'expo-router';
+import { Link, Stack, useLocalSearchParams, type Href } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
-import { getModuleById } from '@/content/modules';
+import { AvTheme } from '@/constants/AvTheme';
+import { getModuleById, getNextModule } from '@/content/modules';
 import { useProgress } from '@/progress/ProgressContext';
+import { practiceNavActions, practiceNavMode } from '@/progress/practiceNav';
 import { scorePractice } from '@/progress/types';
 
 export default function ModulePracticeScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const module = getModuleById(id ?? '');
   const practice = module?.practice;
+  const nextModule = module ? getNextModule(module.id) : undefined;
   const { recordPractice } = useProgress();
   const scrollRef = useRef<ScrollView>(null);
 
@@ -38,6 +41,12 @@ export default function ModulePracticeScreen() {
   const allAnswered = answers.every((a) => a !== null);
   const displayScore = resultScore ?? liveScore;
   const displayPassed = resultScore !== null ? resultPassed : liveScore >= practice.passScore;
+  const nav = practiceNavActions(
+    practiceNavMode({
+      passed: displayPassed,
+      hasNextModule: Boolean(nextModule),
+    }),
+  );
 
   const submit = () => {
     const score = scorePractice(answers, correctIndexes);
@@ -62,8 +71,10 @@ export default function ModulePracticeScreen() {
       <Stack.Screen options={{ title: practice.title }} />
       <ScrollView
         ref={scrollRef}
+        style={styles.scroll}
         contentContainerStyle={styles.container}
         keyboardShouldPersistTaps="handled">
+        <Text style={styles.kicker}>PRACTICE</Text>
         <Text style={styles.title}>{practice.title}</Text>
         <Text style={styles.caption}>
           Pass with {practice.passScore} of {practice.challenges.length} correct.
@@ -77,19 +88,6 @@ export default function ModulePracticeScreen() {
             <Text style={styles.scoreBannerStatus}>
               {displayPassed ? 'Passed — nice work.' : 'Not yet — review and retry.'}
             </Text>
-            {displayPassed ? (
-              <Link href={`/module/${module.id}`} style={styles.link}>
-                Back to module ✓
-              </Link>
-            ) : (
-              <Pressable
-                accessibilityRole="button"
-                style={styles.secondary}
-                onPress={retry}
-                testID="practice-retry">
-                <Text style={styles.secondaryText}>Retry</Text>
-              </Pressable>
-            )}
           </View>
         ) : null}
 
@@ -147,23 +145,18 @@ export default function ModulePracticeScreen() {
             <Text style={styles.primaryText}>Check answers</Text>
           </Pressable>
         ) : (
-          <View style={styles.result}>
+          <View style={styles.result} testID="practice-result-nav">
             <Text style={styles.resultTitle}>
               Score {displayScore}/{practice.challenges.length}{' '}
               {displayPassed ? '— passed' : '— try again'}
             </Text>
-            {!displayPassed ? (
-              <Pressable
-                accessibilityRole="button"
-                style={styles.secondary}
-                onPress={retry}>
-                <Text style={styles.secondaryText}>Retry</Text>
-              </Pressable>
-            ) : (
-              <Link href={`/module/${module.id}`} style={styles.link}>
-                Back to module ✓
-              </Link>
-            )}
+            <PostCheckNav
+              moduleId={module.id}
+              nextModuleId={nextModule?.id}
+              nextModuleTitle={nextModule?.title}
+              actions={nav}
+              onRetry={retry}
+            />
           </View>
         )}
       </ScrollView>
@@ -171,36 +164,101 @@ export default function ModulePracticeScreen() {
   );
 }
 
+function PostCheckNav({
+  moduleId,
+  nextModuleId,
+  nextModuleTitle,
+  actions,
+  onRetry,
+}: {
+  moduleId: string;
+  nextModuleId?: string;
+  nextModuleTitle?: string;
+  actions: ReturnType<typeof practiceNavActions>;
+  onRetry: () => void;
+}) {
+  return (
+    <View style={styles.navRow} testID="practice-bottom-nav">
+      {actions.showRetry ? (
+        <Pressable
+          accessibilityRole="button"
+          style={styles.secondary}
+          onPress={onRetry}
+          testID="practice-retry">
+          <Text style={styles.secondaryText}>Retry</Text>
+        </Pressable>
+      ) : null}
+      {actions.showBackToReading ? (
+        <Link
+          href={`/module/${moduleId}/lesson` as Href}
+          style={styles.navPrimary}
+          testID="practice-back-reading">
+          <Text style={styles.navPrimaryText}>Back to reading</Text>
+        </Link>
+      ) : null}
+      {actions.showNextModule && nextModuleId ? (
+        <Link
+          href={`/module/${nextModuleId}` as Href}
+          style={styles.navPrimary}
+          testID="practice-next-module">
+          <Text style={styles.navPrimaryText}>
+            Next module{nextModuleTitle ? `: ${nextModuleTitle}` : ''}
+          </Text>
+        </Link>
+      ) : null}
+      {actions.showBackToMenu ? (
+        <Link href={'/' as Href} style={styles.link} testID="practice-back-menu">
+          {actions.showBackToReading ? 'Return to menu' : 'Back to menu'}
+        </Link>
+      ) : null}
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+    backgroundColor: AvTheme.bg,
+  },
   container: {
     paddingHorizontal: 24,
     paddingTop: 24,
     paddingBottom: 48,
     gap: 16,
+    backgroundColor: AvTheme.bg,
+  },
+  kicker: {
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    letterSpacing: 1.2,
+    color: AvTheme.teal,
   },
   title: {
     fontSize: 24,
     fontWeight: '700',
+    color: AvTheme.ink,
   },
   caption: {
     fontSize: 14,
-    opacity: 0.7,
+    color: AvTheme.muted,
   },
   scoreBanner: {
     gap: 8,
     paddingVertical: 14,
     paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: 'rgba(27, 108, 168, 0.14)',
+    backgroundColor: AvTheme.bgRaise,
+    borderColor: AvTheme.line,
+    borderWidth: 1,
   },
   scoreBannerTitle: {
     fontSize: 20,
     fontWeight: '700',
+    color: AvTheme.ink,
   },
   scoreBannerStatus: {
     fontSize: 15,
     lineHeight: 20,
-    opacity: 0.85,
+    color: AvTheme.muted,
   },
   card: {
     gap: 8,
@@ -210,66 +268,105 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     lineHeight: 22,
+    color: AvTheme.ink,
   },
   choice: {
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: 'rgba(27, 108, 168, 0.1)',
+    minHeight: 44,
+    justifyContent: 'center',
+    backgroundColor: AvTheme.bgRaise,
+    borderColor: AvTheme.line,
+    borderWidth: 1,
   },
   choiceSelected: {
-    backgroundColor: 'rgba(27, 108, 168, 0.28)',
+    borderColor: AvTheme.accent,
+    backgroundColor: AvTheme.accentFill,
   },
   choiceCorrect: {
-    backgroundColor: 'rgba(34, 140, 80, 0.28)',
+    borderColor: AvTheme.success,
+    backgroundColor: AvTheme.successFill,
   },
   choiceWrong: {
-    backgroundColor: 'rgba(180, 60, 60, 0.22)',
+    borderColor: AvTheme.danger,
+    backgroundColor: AvTheme.dangerFill,
   },
   choiceText: {
     fontSize: 15,
+    color: AvTheme.ink,
   },
   explanation: {
     fontSize: 13,
     lineHeight: 18,
-    opacity: 0.75,
+    color: AvTheme.muted,
     marginTop: 4,
   },
   primary: {
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: '#1B6CA8',
+    borderWidth: 1,
+    borderColor: AvTheme.accent,
+    backgroundColor: AvTheme.accent,
     alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   primaryDisabled: {
     opacity: 0.45,
   },
   primaryText: {
-    color: '#fff',
+    color: AvTheme.accentInk,
     fontWeight: '700',
     fontSize: 16,
   },
   result: {
     gap: 10,
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopColor: AvTheme.line,
+    borderTopWidth: 1,
   },
   resultTitle: {
     fontSize: 17,
     fontWeight: '700',
+    color: AvTheme.ink,
+  },
+  navRow: {
+    gap: 10,
+    marginTop: 4,
   },
   secondary: {
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 8,
-    backgroundColor: 'rgba(27, 108, 168, 0.15)',
+    borderWidth: 1,
+    borderColor: AvTheme.line,
+    backgroundColor: 'transparent',
     alignSelf: 'flex-start',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   secondaryText: {
     fontWeight: '600',
+    color: AvTheme.ink,
+  },
+  navPrimary: {
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderWidth: 1,
+    borderColor: AvTheme.accent,
+    backgroundColor: AvTheme.accent,
+    alignSelf: 'stretch',
+    minHeight: 44,
+    justifyContent: 'center',
+  },
+  navPrimaryText: {
+    color: AvTheme.accentInk,
+    fontWeight: '700',
+    fontSize: 15,
   },
   link: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1B6CA8',
+    color: AvTheme.accent,
   },
 });

@@ -1,10 +1,10 @@
 import { useFonts } from 'expo-font';
-import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
+import { Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 
-import { useColorScheme } from '@/components/useColorScheme';
+import { AvNavigationTheme } from '@/constants/AvNavigationTheme';
 import { ProgressProvider } from '@/progress/ProgressContext';
 
 export { ErrorBoundary } from 'expo-router';
@@ -42,11 +42,15 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-  const colorScheme = useColorScheme();
-
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
+    <ThemeProvider value={AvNavigationTheme}>
+      <Stack
+        screenOptions={{
+          headerStyle: { backgroundColor: AvNavigationTheme.colors.card },
+          headerTintColor: AvNavigationTheme.colors.text,
+          headerTitleStyle: { color: AvNavigationTheme.colors.text },
+          contentStyle: { backgroundColor: AvNavigationTheme.colors.background },
+        }}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="module/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="privacy" options={{ title: 'Privacy Policy' }} />

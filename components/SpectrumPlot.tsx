@@ -1,6 +1,7 @@
+import { View } from 'react-native';
 import Svg, { Line, Rect } from 'react-native-svg';
 
-import { View } from '@/components/Themed';
+import { AvTheme } from '@/constants/AvTheme';
 
 type SpectrumPlotProps = {
   magnitude: ArrayLike<number>;
@@ -15,7 +16,7 @@ export function SpectrumPlot({
   magnitude,
   width = 320,
   height = 140,
-  barColor = '#1B6CA8',
+  barColor = AvTheme.plotPrimary,
   fromBin = 0,
 }: SpectrumPlotProps) {
   const count = magnitude.length;
@@ -41,7 +42,7 @@ export function SpectrumPlot({
           y1={baseY}
           x2={width}
           y2={baseY}
-          stroke="#9AA4B2"
+          stroke={AvTheme.grid}
           strokeWidth={1}
         />
         {Array.from({ length: bars }, (_, offset) => {

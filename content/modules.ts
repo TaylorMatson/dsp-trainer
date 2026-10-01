@@ -20,19 +20,27 @@ export const MODULES: ModuleContent[] = [
         blocks: [
           {
             type: 'paragraph',
-            text: 'A continuous sound is a smooth curve of pressure over time. To store or process it digitally, we sample — take amplitude snapshots at a fixed rate.',
+            text: 'A continuous sound is a smooth curve of air pressure over time — think of a guitar string’s motion drawn as a wavy line. Digital audio cannot store that infinite curve. Instead we sample: take amplitude snapshots at evenly spaced moments and keep only those numbers.',
           },
           {
             type: 'paragraph',
-            text: 'Sample rate (fs) is how many snapshots we take per second, measured in hertz. CD audio uses 44,100 Hz; many music apps use 48,000 Hz.',
+            text: 'Sample rate fs (hertz) is how many snapshots we take per second. Compact discs use 44,100 Hz; many DAWs use 48,000 Hz. The time between samples is Ts = 1/fs seconds. Double fs and you pack twice as many points into each second of sound.',
+          },
+          {
+            type: 'paragraph',
+            text: 'In plain English: the Nyquist frequency is simply half the sample rate — the fastest oscillation those snapshots can still tell apart.',
           },
           {
             type: 'callout',
-            text: 'Nyquist frequency = fs / 2. It is the highest frequency you can represent without aliasing at that sample rate.',
+            text: 'Nyquist frequency fN = fs / 2. It is the highest frequency you can represent without aliasing at that sample rate. Example: at fs = 1,000 Hz, fN = 500 Hz.',
           },
           {
             type: 'paragraph',
-            text: 'If a tone sits below Nyquist, samples can reconstruct it. If it sits at or above Nyquist, the samples look like a different, lower frequency — an alias.',
+            text: 'If a pure tone sits below Nyquist, the samples can reconstruct it. If it sits at or above Nyquist, the same samples look like a different, lower frequency — an alias. Metaphor: filming a spinning wagon wheel with a slow camera; the wheel appears to turn the wrong way because the shutter missed the true motion.',
+          },
+          {
+            type: 'paragraph',
+            text: 'Static example: a 900 Hz sine sampled at fs = 1,000 Hz (Nyquist 500 Hz) folds to about 100 Hz. Raise fs above 1,800 Hz and the same 900 Hz tone becomes uniquely representable again. In the demo, change sample rate while playing — playback restarts so you hear the fold without pressing Play again.',
           },
         ],
       },
@@ -40,10 +48,11 @@ export const MODULES: ModuleContent[] = [
     demos: [
       {
         id: 'aliasing-visual',
-        title: 'See aliasing',
+        title: 'See & hear aliasing',
         summary:
-          'Raise the tone frequency relative to sample rate and watch the reconstructed wave fold into a lower alias.',
+          'Raise the tone frequency relative to sample rate, watch the wave fold, and hear the aliased pitch. Changing sample rate auto-restarts playback.',
         componentId: 'aliasing-visualizer',
+        audio: { mode: 'continuous' },
         params: [
           {
             id: 'frequencyHz',
@@ -120,15 +129,27 @@ export const MODULES: ModuleContent[] = [
         blocks: [
           {
             type: 'paragraph',
-            text: 'A discrete signal is a list of numbers x[n], one amplitude per sample index n. Time between samples is 1/fs seconds.',
+            text: 'A discrete signal is a list of numbers x[n] — one amplitude per sample index n = 0, 1, 2, …. Real time between samples is Ts = 1/fs seconds, so sample n happens at t = n/fs. Metaphor: x[n] is a flip-book; fs is how fast you flip the pages.',
           },
           {
             type: 'paragraph',
-            text: 'A digital sine is computed as x[n] = A · sin(2π · f · n / fs + φ). Frequency f, amplitude A, and phase φ are just parameters in that formula.',
+            text: 'In plain English: each sample is amplitude × sin (or cos) of (frequency × time-index / sample-rate), then plus or minus a phase offset that slides the wave.',
           },
           {
             type: 'callout',
-            text: 'Changing f stretches or compresses the wave across sample indices. Changing A scales height. Phase slides the wave left or right.',
+            text: 'Digital sine: x[n] = A · sin(2π · f · n / fs + φ)',
+          },
+          {
+            type: 'paragraph',
+            text: 'Symbol legend — x[n]: amplitude at sample n. n: integer sample index (0, 1, 2, …). A: peak amplitude (how tall the wave is; A = 1 reaches ±1). f: tone frequency in hertz (cycles per second). fs: sample rate in hertz. φ (phi): phase offset in radians (slides the wave left/right; φ = 0 starts at zero going up). 2π: one full cycle in radians.',
+          },
+          {
+            type: 'paragraph',
+            text: 'Static example: A = 1, f = 220, fs = 2000, φ = 0. Each step advances phase by 2π·220/2000 radians. After n = 2000/220 ≈ 9.09 samples you complete one cycle. Raise f and more cycles pack into the same buffer; raise A and peaks get taller without changing pitch.',
+          },
+          {
+            type: 'paragraph',
+            text: 'Sample rate still matters for hearing: the demo builds the sine at teaching fs, then plays it through the device. If f sits above Nyquist (fs/2), the numbers describe an alias — changing fs can audibly fold the pitch even when the “Frequency” slider stays put.',
           },
         ],
       },
@@ -138,14 +159,15 @@ export const MODULES: ModuleContent[] = [
         id: 'sine-gen',
         title: 'Generate a sine',
         summary:
-          'Adjust frequency and amplitude and watch the discrete waveform redraw from the sine formula.',
+          'Adjust frequency, amplitude, and sample rate — watch the discrete waveform and hear true pitch or an alias when you cross Nyquist.',
         componentId: 'sine-generator',
+        audio: { mode: 'continuous' },
         params: [
           {
             id: 'frequencyHz',
             label: 'Frequency',
             min: 50,
-            max: 600,
+            max: 800,
             step: 25,
             defaultValue: 220,
             unit: 'Hz',
@@ -161,9 +183,9 @@ export const MODULES: ModuleContent[] = [
           {
             id: 'sampleRateHz',
             label: 'Sample rate',
-            min: 1000,
+            min: 800,
             max: 4000,
-            step: 500,
+            step: 200,
             defaultValue: 2000,
             unit: 'Hz',
           },
@@ -232,19 +254,23 @@ export const MODULES: ModuleContent[] = [
         blocks: [
           {
             type: 'paragraph',
-            text: 'The time domain plots amplitude versus sample index. The frequency domain asks: which tones are present, and how strong?',
+            text: 'The time domain plots amplitude versus sample index — the familiar wavy line. The frequency domain asks a different question: which tones are present, and how strong is each? A piano chord looks messy in time but shows neat peaks at each note’s frequency.',
           },
           {
             type: 'paragraph',
-            text: 'A Fast Fourier Transform (FFT) turns a block of samples into bins. Each bin covers a narrow band of frequencies.',
+            text: 'A Fast Fourier Transform (FFT) turns a block of N samples into frequency bins. In plain English: each bin’s frequency is (bin index × sample rate) ÷ FFT length, and the gap between bins is sample rate ÷ length.',
           },
           {
             type: 'callout',
-            text: 'Bin frequency ≈ k · fs / N. For a pure sine that lands on a bin, the magnitude spectrum shows one clear peak (plus a mirror above Nyquist we usually hide).',
+            text: 'Bin frequency ≈ k · fs / N. Example: fs = 256 Hz, N = 128 → Δf = 2 Hz, so bin 8 ≈ 16 Hz.',
           },
           {
             type: 'paragraph',
-            text: 'Reading a spectrum: find the tallest peak, convert its bin index to hertz, and that is the tone you are hearing in the buffer.',
+            text: 'Why neighboring peaks appear: a pure sine only lands exactly on one bin when it completes an integer number of cycles in the FFT frame. Otherwise energy leaks into neighbors (spectral leakage). If Δf ≈ 1 Hz and the tone sits on an integer Hz, the plot looks “clean” even though leakage is the lesson — the demo defaults to a non-integer cycle count so you can see side energy, then slide onto an integer count to watch it collapse.',
+          },
+          {
+            type: 'paragraph',
+            text: 'Metaphor: photographing a picket fence through a coarse grid. Shift the grid spacing and different slats align with gaps — “extra” bars flicker even though the fence did not grow new posts. Windowing (next module) softens the grid edges so leakage is quieter.',
           },
         ],
       },
@@ -254,25 +280,26 @@ export const MODULES: ModuleContent[] = [
         id: 'spectrum-demo',
         title: 'Time and spectrum',
         summary:
-          'Change the tone frequency and watch the waveform and magnitude peak move together.',
+          'Defaults land off-bin so leakage is visible (≈8.75 cycles/frame). Slide onto an integer cycle count to collapse neighbors; change fs to move Δf = fs/N.',
         componentId: 'spectrum-visualizer',
+        audio: { mode: 'continuous' },
         params: [
           {
             id: 'frequencyHz',
             label: 'Tone frequency',
             min: 4,
             max: 40,
-            step: 2,
-            defaultValue: 16,
+            step: 0.5,
+            defaultValue: 17.5,
             unit: 'Hz',
           },
           {
             id: 'sampleRateHz',
             label: 'Sample rate',
-            min: 64,
-            max: 256,
+            min: 128,
+            max: 512,
             step: 64,
-            defaultValue: 128,
+            defaultValue: 256,
             unit: 'Hz',
           },
         ],
@@ -298,11 +325,11 @@ export const MODULES: ModuleContent[] = [
         },
         {
           id: 'bin-freq',
-          prompt: 'With fs = 128 Hz and N = 128, what frequency is bin k = 16?',
+          prompt: 'With fs = 256 Hz and N = 128, what frequency is bin k = 8?',
           kind: 'multipleChoice',
           choices: ['1 Hz', '8 Hz', '16 Hz', '32 Hz'],
           correctIndex: 2,
-          explanation: 'f = k · fs / N = 16 · 128 / 128 = 16 Hz.',
+          explanation: 'f = k · fs / N = 8 · 256 / 128 = 16 Hz. Same formula as the lesson — peek back if needed.',
         },
         {
           id: 'read-peak',
@@ -335,15 +362,23 @@ export const MODULES: ModuleContent[] = [
         blocks: [
           {
             type: 'paragraph',
-            text: 'An FFT assumes the buffer is one period of a repeating loop. If your sine does not land on an integer number of cycles, the wrap-around jump sprays energy into neighboring bins — leakage.',
+            text: 'An FFT pretends the buffer is one period of an infinite loop. If your sine does not land on an integer number of cycles inside those N samples, the wrap-around jump (end ≠ start) sprays energy into neighboring bins — spectral leakage. The tone is still one frequency; the display just smears it.',
           },
           {
             type: 'paragraph',
-            text: 'A window tapers the buffer ends toward zero before the FFT, softening that discontinuity.',
+            text: 'Cycles in the frame ≈ frequency × FFT length ÷ sample rate. Example with N = 256 and fs = 4,096 Hz: f = 448 Hz → exactly 28 cycles (clean peak). f = 437.5 Hz → 27.34 cycles (leakage). A window multiplies the buffer by a taper that goes to zero at the ends before the FFT, softening that discontinuity.',
+          },
+          {
+            type: 'paragraph',
+            text: 'In plain English: Rectangular means “no taper” (raw edges leak). Hann gently fades the ends so side lobes quiet down, at the cost of a slightly wider main peak.',
           },
           {
             type: 'callout',
-            text: 'Rectangular (no taper) leaks more. Hann reduces side lobes but slightly widens the main peak. Trade sharpness for cleaner skirts.',
+            text: 'Rectangular (no taper) leaks more. Hann reduces side lobes but slightly widens the main peak. Trade sharpness for cleaner skirts — like closing curtains so streetlight glare does not wash out the room.',
+          },
+          {
+            type: 'paragraph',
+            text: 'This demo uses mid-audio teaching rates (kilohertz-scale fs and hundreds of hertz for the tone) so the pitch you hear matches the spectrum you study. Nudge frequency off an integer cycle count, then flip Rectangular ↔ Hann and watch side energy drop.',
           },
         ],
       },
@@ -353,25 +388,26 @@ export const MODULES: ModuleContent[] = [
         id: 'window-demo',
         title: 'Leakage vs Hann',
         summary:
-          'Use a non-integer cycle count, then switch Rectangular ↔ Hann and watch side energy drop.',
+          'Hear a mid-range tone at a sensible sample rate. Park frequency off an integer cycle count, then switch Rectangular ↔ Hann and watch side energy drop.',
         componentId: 'windowing-visualizer',
+        audio: { mode: 'continuous' },
         params: [
           {
             id: 'frequencyHz',
             label: 'Tone frequency',
-            min: 10,
-            max: 30,
+            min: 200,
+            max: 800,
             step: 0.5,
-            defaultValue: 17.5,
+            defaultValue: 437.5,
             unit: 'Hz',
           },
           {
             id: 'sampleRateHz',
             label: 'Sample rate',
-            min: 128,
-            max: 128,
-            step: 1,
-            defaultValue: 128,
+            min: 2048,
+            max: 8192,
+            step: 1024,
+            defaultValue: 4096,
             unit: 'Hz',
           },
         ],
@@ -439,15 +475,23 @@ export const MODULES: ModuleContent[] = [
         blocks: [
           {
             type: 'paragraph',
-            text: 'A filter reshapes a signal’s spectrum. Lowpass keeps slow (low-frequency) motion; highpass keeps rapid changes.',
+            text: 'A filter reshapes a signal’s spectrum. Lowpass keeps slow (low-frequency) motion and attenuates fast wiggles — like muffling a room so you still hear the bass. Highpass does the opposite: it favors rapid changes and thins out the slow swell.',
           },
           {
             type: 'paragraph',
-            text: 'FIR (finite impulse response) filters are weighted sums of recent input samples only. IIR (infinite impulse response) filters also feed past outputs back in — often cheaper, with longer “memory.”',
+            text: 'FIR (finite impulse response) filters are weighted sums of recent input samples only. In plain English: each output is a mix of the newest few inputs — no memory of past outputs. Written: y[n] = b0 x[n] + b1 x[n−1] + … + bM x[n−M]. Hit them with a single click (impulse) and the output dies after M+1 samples — finite memory. A moving-average lowpass is the classic teaching FIR: more taps → smoother, slower output (stronger lowpass). A first-difference highpass y[n] = x[n] − x[n−1] emphasizes sample-to-sample jumps — high “speed” in the signal.',
+          },
+          {
+            type: 'paragraph',
+            text: 'IIR (infinite impulse response) filters also feed past outputs back in. In plain English: today’s output remembers yesterday’s output, so a short recipe can ring for a long time. Written: y[n] = … + a1 y[n−1] + …. A one-pole smoother y[n] = y[n−1] + α (x[n] − y[n−1]) is the teaching IIR lowpass: small α → sluggish follow (stronger lowpass); α near 1 → tracks quickly. Highpass is often “input minus that smoother.”',
           },
           {
             type: 'callout',
-            text: 'Teaching demos here: FIR moving-average lowpass / first-difference highpass, and a one-pole IIR smoother (and its highpass complement).',
+            text: 'Frequency ↔ “speed” intuition: low-frequency content changes slowly from sample to sample; high-frequency content flips faster. FIR averages or differences those neighbors. IIR remembers previous outputs, so transients can ring longer and phase/delay feel different even when the magnitude story is similar.',
+          },
+          {
+            type: 'paragraph',
+            text: 'In the demo, mix a low audible tone with a high one (defaults 220 Hz + 2000 Hz at teaching fs = 8 kHz), then toggle FIR/IIR and LP/HP. Visually, lowpass should calm the trace toward the slow wave; highpass should leave the rapid ripple. Playback filters that same buffer, then resamples to the device — the Hz on the sliders is the pitch you hear. Slider and chip changes rebuild playback live.',
           },
         ],
       },
@@ -455,27 +499,28 @@ export const MODULES: ModuleContent[] = [
     demos: [
       {
         id: 'filter-demo',
-        title: 'LP / HP playground',
+        title: 'LP / HP demo',
         summary:
-          'Mix a low and high sine, then toggle FIR/IIR and lowpass/highpass to see what survives.',
+          'Mix a low and high audible sine, then toggle FIR/IIR and lowpass/highpass — hear and see what survives. Slider Hz matches playback pitch.',
         componentId: 'filter-visualizer',
+        audio: { mode: 'continuous' },
         params: [
           {
             id: 'lowHz',
             label: 'Low tone',
-            min: 2,
-            max: 10,
-            step: 1,
-            defaultValue: 4,
+            min: 100,
+            max: 400,
+            step: 20,
+            defaultValue: 220,
             unit: 'Hz',
           },
           {
             id: 'highHz',
             label: 'High tone',
-            min: 16,
-            max: 48,
-            step: 4,
-            defaultValue: 32,
+            min: 800,
+            max: 3000,
+            step: 100,
+            defaultValue: 2000,
             unit: 'Hz',
           },
           {
@@ -551,15 +596,27 @@ export const MODULES: ModuleContent[] = [
         blocks: [
           {
             type: 'paragraph',
-            text: 'An impulse is a single “click.” How a system responds to that click is its impulse response (IR).',
+            text: 'An impulse is a single “click”: 1 at n = 0 and 0 elsewhere. How a linear system answers that click is its impulse response (IR), often written h[n]. Metaphor: clap once in a cathedral; the decaying echoes you hear are the room’s IR. Every later sound is that clap-pattern painted onto the music.',
           },
           {
             type: 'paragraph',
-            text: 'Convolution slides the IR across the input, scaling and summing copies. That is how linear time-invariant filters “mix” memory into a signal.',
+            text: 'Discrete convolution mixes the IR across the input. In plain English: for each output time, flip and slide the impulse response across the input, multiply overlaps, and add them up. Written: y[n] = Σ_k x[k] · h[n − k]. That is exactly what FIR filtering is — the b coefficients are h[n]. Linear time-invariant filters are completely described by their IR.',
+          },
+          {
+            type: 'paragraph',
+            text: 'In plain English: a unit impulse IR (just [1]) leaves the signal alone; an echo IR keeps a full-strength click at delay 0 and adds a quieter tap later so you hear a delayed copy.',
           },
           {
             type: 'callout',
-            text: 'A unit impulse IR leaves the signal unchanged. An echo IR is “1 at 0, plus a quieter tap later” — convolution paints a delayed copy onto the output.',
+            text: 'Unit impulse IR h = [1] leaves the signal unchanged (identity). Echo IR: 1 at delay 0, plus a quieter tap g at delay D → y gets a delayed copy scaled by g. Example at teaching fs = 4 kHz: D = 400 samples (~100 ms), g = 0.5 → a half-loud repeat a tenth of a second later.',
+          },
+          {
+            type: 'paragraph',
+            text: 'Static walk-through: burst x = [1, 0.5, 0], echo h = [1, 0, 0, 0.4]. Convolution yields a copy of the burst starting at n = 0 and another starting at n = 3 scaled by 0.4. In the demo, tap Use echo, stretch delay, change the audible burst frequency, and hear the second tap move — the plots show the same IR you are hearing.',
+          },
+          {
+            type: 'paragraph',
+            text: 'Why care? Reverb, EQ, and many “effects” are convolution (or fast FFT approximations of it) with carefully designed IRs. Once you see filtering as mixing memory into a signal, FIR math and echo demos stop feeling like separate topics.',
           },
         ],
       },
@@ -569,24 +626,26 @@ export const MODULES: ModuleContent[] = [
         id: 'conv-demo',
         title: 'Echo by convolution',
         summary:
-          'Convolve a short burst with either a unit impulse or an echo kernel and compare outputs.',
+          'Play an audible tone burst through a unit impulse or echo kernel — hear the delayed tap and compare plots. Use echo is a button; frequency is a slider.',
         componentId: 'convolution-visualizer',
+        audio: { mode: 'oneshot' },
         params: [
           {
-            id: 'useEcho',
-            label: 'Use echo (0=impulse, 1=echo)',
-            min: 0,
-            max: 1,
-            step: 1,
-            defaultValue: 1,
+            id: 'frequencyHz',
+            label: 'Burst frequency',
+            min: 200,
+            max: 800,
+            step: 25,
+            defaultValue: 400,
+            unit: 'Hz',
           },
           {
             id: 'delaySamples',
             label: 'Echo delay',
-            min: 4,
-            max: 20,
-            step: 2,
-            defaultValue: 8,
+            min: 200,
+            max: 800,
+            step: 50,
+            defaultValue: 400,
             unit: 'samples',
           },
           {
@@ -655,4 +714,14 @@ export function getModuleById(id: string): ModuleContent | undefined {
 
 export function listReadyModules(): ModuleContent[] {
   return MODULES.filter(isModuleReady);
+}
+
+/** Next ready module in curriculum order, if any. */
+export function getNextModule(moduleId: string): ModuleContent | undefined {
+  const ready = listReadyModules();
+  const index = ready.findIndex((module) => module.id === moduleId);
+  if (index < 0 || index >= ready.length - 1) {
+    return undefined;
+  }
+  return ready[index + 1];
 }

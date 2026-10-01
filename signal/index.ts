@@ -29,3 +29,14 @@ export {
   makeEchoKernel,
   makeImpulse,
 } from './convolve';
+
+export {
+  audibleFrequencyHz,
+  bytesToBase64,
+  encodeWavBytes,
+  encodeWavDataUri,
+  fadeEdges,
+  normalizePeak,
+  resampleLinear,
+  toFloat32,
+} from './pcm';

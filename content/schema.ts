@@ -34,6 +34,11 @@ export type Demo = {
   summary: string;
   componentId: DemoComponentId;
   params: DemoParam[];
+  /** Paired audio mode for AvDemoShell. Defaults to continuous when omitted. */
+  audio?: {
+    mode: 'continuous' | 'oneshot';
+    defaultPlaying?: boolean;
+  };
 };
 
 export type PracticeChallenge = {

@@ -2,6 +2,7 @@ import { Link } from 'expo-router';
 import { ScrollView, StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
+import { AvTheme } from '@/constants/AvTheme';
 import { MODULES } from '@/content/modules';
 import { useProgress } from '@/progress/ProgressContext';
 import { isModuleComplete } from '@/progress/types';
@@ -10,7 +11,8 @@ export default function HomeScreen() {
   const { getProgress } = useProgress();
 
   return (
-    <ScrollView contentContainerStyle={styles.container}>
+    <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+      <Text style={styles.kicker}>DSP TRAINER</Text>
       <Text style={styles.brand}>DSP Trainer</Text>
       <Text style={styles.subtitle}>
         Lesson → demo → practice. Hear and see signals change.
@@ -42,56 +44,69 @@ export default function HomeScreen() {
       })}
 
       <Link href="/(tabs)/demo" style={styles.secondaryLink}>
-        Open sine smoke demo
+        Open coding lab
       </Link>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+    backgroundColor: AvTheme.bg,
+  },
   container: {
     paddingHorizontal: 24,
-    paddingTop: 48,
+    paddingTop: 32,
     paddingBottom: 48,
     gap: 12,
+    backgroundColor: AvTheme.bg,
+  },
+  kicker: {
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    letterSpacing: 1.4,
+    color: AvTheme.teal,
   },
   brand: {
     fontSize: 32,
     fontWeight: '700',
+    color: AvTheme.ink,
   },
   subtitle: {
     fontSize: 16,
-    opacity: 0.8,
     lineHeight: 22,
     marginBottom: 8,
+    color: AvTheme.muted,
   },
   moduleBlock: {
     marginTop: 8,
     gap: 6,
-    paddingVertical: 12,
+    paddingVertical: 14,
     paddingHorizontal: 14,
-    borderRadius: 10,
-    backgroundColor: 'rgba(27, 108, 168, 0.1)',
+    backgroundColor: AvTheme.bgRaise,
+    borderColor: AvTheme.line,
+    borderWidth: 1,
   },
   moduleTitle: {
     fontSize: 17,
     fontWeight: '600',
+    color: AvTheme.ink,
   },
   moduleMeta: {
     fontSize: 13,
-    opacity: 0.65,
+    color: AvTheme.muted,
   },
   link: {
     marginTop: 6,
     fontSize: 16,
     fontWeight: '600',
-    color: '#1B6CA8',
+    color: AvTheme.accent,
   },
   secondaryLink: {
     marginTop: 24,
     fontSize: 15,
     fontWeight: '500',
-    color: '#1B6CA8',
-    opacity: 0.85,
+    color: AvTheme.teal,
   },
 });

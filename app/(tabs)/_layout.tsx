@@ -1,6 +1,7 @@
 import { SymbolView } from 'expo-symbols';
 import { Tabs } from 'expo-router';
 
+import { AvTheme } from '@/constants/AvTheme';
 import Colors from '@/constants/Colors';
 import { useColorScheme } from '@/components/useColorScheme';
 
@@ -10,8 +11,17 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: Colors[colorScheme].tint,
+        tabBarInactiveTintColor: Colors[colorScheme].tabIconDefault,
+        tabBarStyle: {
+          backgroundColor: AvTheme.bg,
+          borderTopColor: AvTheme.line,
+        },
+        headerStyle: { backgroundColor: AvTheme.bg },
+        headerTintColor: AvTheme.ink,
+        headerTitleStyle: { color: AvTheme.ink },
         headerShown: true,
+        sceneStyle: { backgroundColor: AvTheme.bg },
       }}>
       <Tabs.Screen
         name="index"
@@ -29,13 +39,13 @@ export default function TabLayout() {
       <Tabs.Screen
         name="demo"
         options={{
-          title: 'Demo',
+          title: 'Lab',
           tabBarIcon: ({ color }) => (
             <SymbolView
               name={{
-                ios: 'waveform.path.ecg',
-                android: 'show_chart',
-                web: 'show_chart',
+                ios: 'hammer',
+                android: 'build',
+                web: 'build',
               }}
               tintColor={color}
               size={28}

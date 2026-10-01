@@ -1,19 +1,22 @@
+import { View } from 'react-native';
 import Svg, { Line, Polyline } from 'react-native-svg';
 
-import { View } from '@/components/Themed';
+import { AvTheme } from '@/constants/AvTheme';
 
 type WaveformPlotProps = {
   samples: ArrayLike<number>;
   width?: number;
   height?: number;
   strokeColor?: string;
+  gridColor?: string;
 };
 
 export function WaveformPlot({
   samples,
   width = 320,
   height = 140,
-  strokeColor = '#1B6CA8',
+  strokeColor = AvTheme.plotPrimary,
+  gridColor = AvTheme.grid,
 }: WaveformPlotProps) {
   const count = samples.length;
   if (count < 2) {
@@ -37,7 +40,7 @@ export function WaveformPlot({
           y1={midY}
           x2={width}
           y2={midY}
-          stroke="#9AA4B2"
+          stroke={gridColor}
           strokeWidth={1}
           strokeDasharray="4 4"
         />

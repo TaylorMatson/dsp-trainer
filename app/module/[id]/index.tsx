@@ -2,6 +2,7 @@ import { Link, Stack, useLocalSearchParams, type Href } from 'expo-router';
 import { StyleSheet } from 'react-native';
 
 import { Text, View } from '@/components/Themed';
+import { AvTheme } from '@/constants/AvTheme';
 import { getModuleById } from '@/content/modules';
 import { useModuleProgress } from '@/progress/ProgressContext';
 import { isModuleComplete } from '@/progress/types';
@@ -25,6 +26,7 @@ export default function ModuleHomeScreen() {
     <>
       <Stack.Screen options={{ title: module.title }} />
       <View style={styles.container}>
+        <Text style={styles.kicker}>MODULE {module.order}</Text>
         <Text style={styles.title}>{module.title}</Text>
         <Text style={styles.summary}>{module.summary}</Text>
         <Text style={styles.meta}>
@@ -87,19 +89,27 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 24,
     gap: 12,
+    backgroundColor: AvTheme.bg,
+  },
+  kicker: {
+    fontFamily: 'SpaceMono',
+    fontSize: 12,
+    letterSpacing: 1.2,
+    color: AvTheme.teal,
   },
   title: {
     fontSize: 26,
     fontWeight: '700',
+    color: AvTheme.ink,
   },
   summary: {
     fontSize: 15,
     lineHeight: 22,
-    opacity: 0.8,
+    color: AvTheme.muted,
   },
   meta: {
     fontSize: 13,
-    opacity: 0.6,
+    color: AvTheme.muted,
     marginBottom: 8,
   },
   steps: {
@@ -109,16 +119,18 @@ const styles = StyleSheet.create({
   step: {
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: 'rgba(27, 108, 168, 0.12)',
+    backgroundColor: AvTheme.bgRaise,
+    borderColor: AvTheme.line,
+    borderWidth: 1,
   },
   stepLabel: {
     fontSize: 17,
     fontWeight: '600',
+    color: AvTheme.ink,
   },
   stepDetail: {
     marginTop: 4,
     fontSize: 13,
-    opacity: 0.7,
+    color: AvTheme.muted,
   },
 });

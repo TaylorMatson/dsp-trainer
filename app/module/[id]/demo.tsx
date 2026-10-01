@@ -1,14 +1,15 @@
 import { Link, Stack, useLocalSearchParams } from 'expo-router';
 import { useRef } from 'react';
-import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 
 import { AliasingVisualizer } from '@/components/AliasingVisualizer';
 import { ConvolutionVisualizer } from '@/components/ConvolutionVisualizer';
 import { FilterVisualizer } from '@/components/FilterVisualizer';
 import { SineGeneratorVisualizer } from '@/components/SineGeneratorVisualizer';
 import { SpectrumVisualizer } from '@/components/SpectrumVisualizer';
-import { Text, View } from '@/components/Themed';
 import { WindowingVisualizer } from '@/components/WindowingVisualizer';
+import { stopAllDemoAudio } from '@/audio/demoAudioBus';
+import { AvTheme } from '@/constants/AvTheme';
 import { getModuleById } from '@/content/modules';
 import type { DemoComponentId } from '@/content/schema';
 import { useProgress } from '@/progress/ProgressContext';
@@ -22,9 +23,9 @@ export default function ModuleDemoScreen() {
 
   if (!module || !demo) {
     return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Demo unavailable</Text>
-      </View>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
+        <Text style={styles.unavailable}>Demo unavailable</Text>
+      </ScrollView>
     );
   }
 
@@ -35,21 +36,27 @@ export default function ModuleDemoScreen() {
     }
   };
 
+  const continueToPractice = () => {
+    stopAllDemoAudio();
+  };
+
   return (
     <>
-      <Stack.Screen options={{ title: demo.title }} />
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.title}>{demo.title}</Text>
+      <Stack.Screen
+        options={{
+          title: demo.title,
+          headerStyle: { backgroundColor: AvTheme.bg },
+          headerTintColor: AvTheme.ink,
+          headerTitleStyle: { color: AvTheme.ink },
+        }}
+      />
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.container}>
         <DemoBody componentId={demo.componentId} demo={demo} onInteracted={onInteracted} />
-        <Pressable
-          accessibilityRole="button"
-          style={styles.primary}
-          onPress={() => {
-            void markDemoDone(module.id);
-          }}>
-          <Text style={styles.primaryText}>Mark demo complete</Text>
-        </Pressable>
-        <Link href={`/module/${module.id}/practice`} style={styles.link}>
+        <Link
+          href={`/module/${module.id}/practice`}
+          style={styles.continueText}
+          testID="continue-to-practice"
+          onPress={continueToPractice}>
           Continue to practice →
         </Link>
       </ScrollView>
@@ -87,33 +94,26 @@ function DemoBody({
 }
 
 const styles = StyleSheet.create({
+  scroll: {
+    flex: 1,
+    backgroundColor: AvTheme.bg,
+  },
   container: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
+    paddingHorizontal: 16,
+    paddingTop: 16,
     paddingBottom: 48,
     gap: 16,
     alignItems: 'stretch',
+    backgroundColor: AvTheme.bg,
   },
-  title: {
+  unavailable: {
     fontSize: 24,
     fontWeight: '700',
+    color: AvTheme.ink,
   },
-  primary: {
-    marginTop: 8,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: '#1B6CA8',
-    alignItems: 'center',
-  },
-  primaryText: {
-    color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
-  },
-  link: {
+  continueText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#1B6CA8',
+    color: AvTheme.accent,
   },
 });
